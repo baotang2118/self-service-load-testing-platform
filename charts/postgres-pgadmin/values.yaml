@@ -1,0 +1,11 @@
+postgres:
+  image: postgres:16-alpine
+  database: tickets
+  username: tickets
+  password: tickets-local-only
+  storage: 1Gi
+
+pgadmin:
+  image: dpage/pgadmin4:9.10
+  email: admin@example.com
+  password: admin-local-only
