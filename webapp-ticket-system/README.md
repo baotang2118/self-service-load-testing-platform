@@ -48,6 +48,10 @@ Running migrations creates tables in PostgreSQL; it does not transfer existing d
 
 The single worker runs only a fixed placeholder script, not commands supplied by users. It polls once a second and uses a 30-second timeout. There are no retries. If the worker stops during a job, its next startup marks that ticket **Fail**; queued work waits until the worker restarts. Do not start multiple workers: startup recovery assumes the worker is the only one. For worker logs, use `docker compose logs -f worker`.
 
+## Helm deployment
+
+The repository includes a Helm chart for the web process and single worker at [`charts/webapp-ticket-system`](../charts/webapp-ticket-system/README.md). It connects to an external PostgreSQL service and runs migrations before deploying the app.
+
 ## Verification
 
 The PostgreSQL user must have permission to create a test database for pytest. Configure the connection as described above before running:
