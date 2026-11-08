@@ -1,13 +1,10 @@
 import json
-from unittest.mock import patch
 
 import pytest
-from django.core.cache import cache
 
 
 @pytest.mark.django_db
-def test_crud_and_invalidation(client):
-    cache.clear()
+def test_crud(client):
     response = client.post(
         "/api/items",
         data=json.dumps({"name": "first"}),
@@ -61,18 +58,6 @@ def test_invalid_requests_and_methods(client):
 
 
 @pytest.mark.django_db
-def test_cache_failure_falls_back_to_database(client):
-    item = client.post(
-        "/api/items", data='{"name":"example"}', content_type="application/json"
-    ).json()
-    with patch("items.views.cache.get", side_effect=ConnectionError):
-        assert client.get(f"/api/items/{item['id']}").json() == item
-
-
-@pytest.mark.django_db
 def test_health(client):
     assert client.get("/health/live").status_code == 200
-    with patch("items.views.redis.Redis.from_url") as factory:
-        assert client.get("/health/ready").status_code == 200
-        factory.return_value.ping.side_effect = ConnectionError
-        assert client.get("/health/ready").status_code == 503
+    assert client.get("/health/ready").status_code == 200

@@ -12,6 +12,4 @@
     secretKeyRef:
       name: {{ .Values.postgres.existingSecret | quote }}
       key: {{ .Values.postgres.passwordKey | quote }}
-- name: REDIS_URL
-  value: {{ .Values.redis.url | quote }}
 {{- end }}

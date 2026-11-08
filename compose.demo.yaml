@@ -12,14 +12,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
-  redis:
-    image: redis:7-alpine
-    command: ["redis-server", "--save", "", "--appendonly", "no"]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 12
   django:
     build: ./demo-django
     command: ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000"]
@@ -29,13 +21,10 @@ services:
       POSTGRES_DB: tickets
       POSTGRES_USER: tickets
       POSTGRES_PASSWORD: tickets-local-only
-      REDIS_URL: redis://redis:6379/0
     ports:
       - "8001:8000"
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     restart: on-failure
   go:
@@ -45,8 +34,6 @@ services:
       - "8002:8080"
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     restart: on-failure
 volumes:
