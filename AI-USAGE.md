@@ -22,3 +22,20 @@ AI produced before using it.
 	Redis executables were unavailable. The live stack and container images
 	therefore still require verification in an environment with Docker or a
 	Kubernetes cluster.
+
+## AWS Terraform foundation
+
+- Tool: GitHub Copilot in VS Code, with read-only repository exploration and a
+	reviewed implementation plan before editing.
+- Representative request: "Start implementation" after selecting AWS, a
+	dedicated short-lived EKS demo, ECR, a dedicated VPC, GitHub OIDC, budget
+	alerts, and protected teardown.
+- Copilot added reusable network, EKS, ECR, GitHub OIDC, and budget modules, an
+	S3 state bootstrap, an AWS-only Terraform workflow, and setup documentation.
+	The AWS resources were not applied.
+- Validation: VS Code reported no diagnostics for the edited Terraform and
+	workflow files, and `git diff --check` passed. Terraform, OpenTofu, an HCL
+	parser, and an action linter were unavailable, so Terraform formatting,
+	initialization, validation, plans, and GitHub workflow execution remain
+	unverified. Review the generated IAM permissions policy and AWS cost estimate
+	before using the workflow in an account.
