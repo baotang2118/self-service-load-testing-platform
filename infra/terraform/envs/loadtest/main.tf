@@ -9,33 +9,34 @@ locals {
 module "network" {
   source = "../../modules/network"
 
-  name                   = var.project_name
-  cluster_name           = var.project_name
-  vpc_cidr               = var.vpc_cidr
+  name                    = var.project_name
+  cluster_name            = var.project_name
+  vpc_cidr                = var.vpc_cidr
   availability_zone_count = 2
-  public_subnet_cidrs    = var.public_subnet_cidrs
-  private_subnet_cidrs   = var.private_subnet_cidrs
-  tags                   = local.tags
+  public_subnet_cidrs     = var.public_subnet_cidrs
+  private_subnet_cidrs    = var.private_subnet_cidrs
+  tags                    = local.tags
 }
 
 module "cluster" {
   source = "../../modules/cluster"
 
-  name                 = var.project_name
-  kubernetes_version   = var.cluster_version
-  private_subnet_ids   = module.network.private_subnet_ids
-  public_subnet_ids    = module.network.public_subnet_ids
-  cluster_admin_cidr   = var.cluster_admin_cidr
-  operator_role_arn    = var.operator_role_arn
-  tags                 = local.tags
+  name                            = var.project_name
+  kubernetes_version              = var.cluster_version
+  private_subnet_ids              = module.network.private_subnet_ids
+  public_subnet_ids               = module.network.public_subnet_ids
+  cluster_admin_cidr              = var.cluster_admin_cidr
+  operator_role_arn               = var.operator_role_arn
+  additional_admin_principal_arns = var.additional_admin_principal_arns
+  tags                            = local.tags
 }
 
 module "ecr" {
   source = "../../modules/ecr"
 
-  name        = "${var.project_name}-sample-service"
+  name         = "${var.project_name}-sample-service"
   force_delete = var.ecr_force_delete
-  tags        = local.tags
+  tags         = local.tags
 }
 
 module "github_oidc" {

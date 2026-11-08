@@ -52,6 +52,14 @@ variable "operator_role_arn" {
   }
 }
 
+variable "additional_admin_principal_arns" {
+  description = "Additional IAM principals granted EKS cluster administrator access."
+  type        = set(string)
+  default = [
+    "arn:aws:iam::260201160134:user/baotd",
+  ]
+}
+
 variable "budget_alert_email" {
   description = "Email address for AWS Budget notifications."
   type        = string
