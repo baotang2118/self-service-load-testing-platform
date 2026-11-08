@@ -11,6 +11,8 @@ on:
           - plan
           - apply
           - destroy
+  schedule:
+    - cron: "17 8 * * *"
 
 permissions:
   contents: read
