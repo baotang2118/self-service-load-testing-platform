@@ -1,0 +1,6 @@
+apiVersion: v2
+name: postgres-pgadmin
+description: Standalone PostgreSQL and pgAdmin services
+type: application
+version: 0.1.0
+appVersion: "16"
