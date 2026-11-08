@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<div class="login-layout">
+  <div class="login-intro"><span class="eyebrow">DEVOPS WORKSPACE</span><h1>Good work starts<br>with a clear request<span class="accent">.</span></h1><p>Development and operations, working together.</p><div class="intro-rule"></div><span class="intro-caption">REQUESTS &nbsp; / &nbsp; APPROVALS &nbsp; / &nbsp; EXECUTION</span></div>
+  <section class="login-form"><span class="eyebrow">WELCOME BACK</span><h2>Sign in</h2><p class="muted">Use your workspace account to continue.</p>
+    {% if form.errors %}<div class="notice notice-error" role="alert">Your username or password was not recognized.</div>{% endif %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+      <label class="field-label" for="id_username">Username</label><input class="form-control" id="id_username" name="username" autocomplete="username" required autofocus>
+      <label class="field-label" for="id_password">Password</label><input class="form-control" id="id_password" type="password" name="password" autocomplete="current-password" required>
+      <button class="button-primary login-button" type="submit">Sign in <span aria-hidden="true">&rarr;</span></button>
+    </form>
+  </section>
+</div>
+{% endblock %}
