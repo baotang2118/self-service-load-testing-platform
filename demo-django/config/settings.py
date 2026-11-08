@@ -21,13 +21,3 @@ DATABASES = {
         "PORT": os.getenv("POSTGRES_PORT", "5432"),
     }
 }
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
-        "KEY_PREFIX": "demo-django",
-        "TIMEOUT": 60,
-        "OPTIONS": {"socket_connect_timeout": 1, "socket_timeout": 1},
-    }
-}

@@ -1,9 +1,6 @@
 import json
 import logging
 
-import redis
-from django.conf import settings
-from django.core.cache import cache
 from django.db import connection
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -34,14 +31,6 @@ def parse_item(request):
     return {"name": name, "description": description}
 
 
-def cache_call(method, *args):
-    try:
-        return getattr(cache, method)(*args)
-    except Exception:
-        logger.exception("Redis cache %s failed", method)
-        return None
-
-
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def collection(request):
@@ -58,32 +47,24 @@ def collection(request):
 @csrf_exempt
 @require_http_methods(["GET", "PUT", "DELETE"])
 def detail(request, item_id):
-    key = f"item:{item_id}"
     data = None
     if request.method == "PUT":
         data = parse_item(request)
         if data is None:
             return JsonResponse({"error": "invalid item"}, status=400)
-    if request.method == "GET":
-        cached = cache_call("get", key)
-        if cached is not None:
-            return JsonResponse(cached)
     try:
         item = Item.objects.get(pk=item_id)
     except Item.DoesNotExist:
         return JsonResponse({"error": "not found"}, status=404)
     if request.method == "GET":
         data = item_data(item)
-        cache_call("set", key, data, 60)
         return JsonResponse(data)
     if request.method == "DELETE":
         item.delete()
-        cache_call("delete", key)
         return HttpResponse(status=204)
     item.name = data["name"]
     item.description = data["description"]
     item.save()
-    cache_call("delete", key)
     return JsonResponse(item_data(item))
 
 
@@ -97,9 +78,6 @@ def ready(request):
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
-        redis.Redis.from_url(
-            settings.REDIS_URL, socket_connect_timeout=1, socket_timeout=1
-        ).ping()
     except Exception:
         logger.exception("Readiness check failed")
         return JsonResponse({"status": "unavailable"}, status=503)

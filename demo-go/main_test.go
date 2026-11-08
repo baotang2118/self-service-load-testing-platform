@@ -54,40 +54,15 @@ func (db *fakeStore) delete(ctx context.Context, id int64) error {
 }
 func (db *fakeStore) ping(ctx context.Context) error { return db.err }
 
-type fakeCache struct {
-	values map[int64]item
-	err    error
-}
-
-func (cache *fakeCache) get(ctx context.Context, id int64) (item, bool) {
-	if cache.err != nil {
-		return item{}, false
-	}
-	value, ok := cache.values[id]
-	return value, ok
-}
-func (cache *fakeCache) set(ctx context.Context, value item) {
-	if cache.err == nil {
-		cache.values[value.ID] = value
-	}
-}
-func (cache *fakeCache) delete(ctx context.Context, id int64) {
-	if cache.err == nil {
-		delete(cache.values, id)
-	}
-}
-func (cache *fakeCache) ping(ctx context.Context) error { return cache.err }
-
 func request(handler http.Handler, method, path, body string) *httptest.ResponseRecorder {
 	result := httptest.NewRecorder()
 	handler.ServeHTTP(result, httptest.NewRequest(method, path, strings.NewReader(body)))
 	return result
 }
 
-func TestCRUDAndCache(t *testing.T) {
+func TestCRUD(t *testing.T) {
 	db := &fakeStore{values: map[int64]item{}}
-	cache := &fakeCache{values: map[int64]item{}}
-	handler := (server{db, cache}).routes()
+	handler := (server{db}).routes()
 	created := request(handler, "POST", "/api/items", `{"name":"first"}`)
 	if created.Code != 201 {
 		t.Fatal(created.Code)
@@ -99,16 +74,16 @@ func TestCRUDAndCache(t *testing.T) {
 	if result := request(handler, "GET", "/api/items", ""); result.Code != 200 || !strings.Contains(result.Body.String(), "first") {
 		t.Fatal(result.Body.String())
 	}
-	if result := request(handler, "GET", "/api/items/1", ""); result.Code != 200 || len(cache.values) != 1 {
-		t.Fatal(result.Code)
+	if result := request(handler, "GET", "/api/items/1", ""); result.Code != 200 || !strings.Contains(result.Body.String(), "first") {
+		t.Fatal(result.Body.String())
 	}
-	if result := request(handler, "PUT", "/api/items/1", `{"name":"updated","description":"demo"}`); result.Code != 200 || len(cache.values) != 0 {
+	if result := request(handler, "PUT", "/api/items/1", `{"name":"updated","description":"demo"}`); result.Code != 200 {
 		t.Fatal(result.Code)
 	}
 	if result := request(handler, "GET", "/api/items/1", ""); !strings.Contains(result.Body.String(), "updated") {
 		t.Fatal(result.Body.String())
 	}
-	if result := request(handler, "DELETE", "/api/items/1", ""); result.Code != 204 || len(cache.values) != 0 {
+	if result := request(handler, "DELETE", "/api/items/1", ""); result.Code != 204 {
 		t.Fatal(result.Code)
 	}
 	if result := request(handler, "GET", "/api/items/1", ""); result.Code != 404 {
@@ -118,8 +93,7 @@ func TestCRUDAndCache(t *testing.T) {
 
 func TestValidationAndHealth(t *testing.T) {
 	db := &fakeStore{values: map[int64]item{}}
-	cache := &fakeCache{values: map[int64]item{}}
-	handler := (server{db, cache}).routes()
+	handler := (server{db}).routes()
 	for _, body := range []string{"invalid", "[]", `{"name":" "}`, `{"name":1}`, `{"name":"x","description":null}`} {
 		if result := request(handler, "POST", "/api/items", body); result.Code != 400 {
 			t.Fatalf("%q: %d", body, result.Code)
@@ -128,18 +102,14 @@ func TestValidationAndHealth(t *testing.T) {
 	if result := request(handler, "POST", "/api/items/1", ""); result.Code != 405 {
 		t.Fatal(result.Code)
 	}
-	request(handler, "POST", "/api/items", `{"name":"test"}`)
-	cache.err = errors.New("redis unavailable")
-	if result := request(handler, "GET", "/api/items/1", ""); result.Code != 200 {
-		t.Fatal(result.Code)
-	}
+	db.err = errors.New("database unavailable")
 	if result := request(handler, "GET", "/health/ready", ""); result.Code != 503 {
 		t.Fatal(result.Code)
 	}
 	if result := request(handler, "GET", "/health/live", ""); result.Code != 200 {
 		t.Fatal(result.Code)
 	}
-	cache.err = nil
+	db.err = nil
 	if result := request(handler, "GET", "/health/ready", ""); result.Code != 200 {
 		t.Fatal(result.Code)
 	}

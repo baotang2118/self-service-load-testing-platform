@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -20,7 +19,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 )
 
 type item struct {
@@ -35,13 +33,6 @@ type store interface {
 	create(context.Context, item) (item, error)
 	update(context.Context, item) (item, error)
 	delete(context.Context, int64) error
-	ping(context.Context) error
-}
-
-type itemCache interface {
-	get(context.Context, int64) (item, bool)
-	set(context.Context, item)
-	delete(context.Context, int64)
 	ping(context.Context) error
 }
 
@@ -93,48 +84,7 @@ func (db postgresStore) delete(ctx context.Context, id int64) error {
 
 func (db postgresStore) ping(ctx context.Context) error { return db.pool.Ping(ctx) }
 
-type redisCache struct{ client *redis.Client }
-
-func cacheKey(id int64) string { return fmt.Sprintf("demo-go:item:%d", id) }
-
-func (cache redisCache) get(ctx context.Context, id int64) (item, bool) {
-	var value item
-	data, err := cache.client.Get(ctx, cacheKey(id)).Bytes()
-	if err != nil {
-		if !errors.Is(err, redis.Nil) {
-			log.Printf("redis get: %v", err)
-		}
-		return value, false
-	}
-	if err := json.Unmarshal(data, &value); err != nil {
-		log.Printf("redis decode: %v", err)
-		return value, false
-	}
-	return value, true
-}
-
-func (cache redisCache) set(ctx context.Context, value item) {
-	data, err := json.Marshal(value)
-	if err == nil {
-		err = cache.client.Set(ctx, cacheKey(value.ID), data, time.Minute).Err()
-	}
-	if err != nil {
-		log.Printf("redis set: %v", err)
-	}
-}
-
-func (cache redisCache) delete(ctx context.Context, id int64) {
-	if err := cache.client.Del(ctx, cacheKey(id)).Err(); err != nil {
-		log.Printf("redis delete: %v", err)
-	}
-}
-
-func (cache redisCache) ping(ctx context.Context) error { return cache.client.Ping(ctx).Err() }
-
-type server struct {
-	db    store
-	cache itemCache
-}
+type server struct{ db store }
 
 func respond(writer http.ResponseWriter, status int, value any) {
 	writer.Header().Set("Content-Type", "application/json")
@@ -184,7 +134,7 @@ func (service server) routes() http.Handler {
 	mux.HandleFunc("GET /health/ready", func(writer http.ResponseWriter, request *http.Request) {
 		ctx, cancel := context.WithTimeout(request.Context(), 2*time.Second)
 		defer cancel()
-		if service.db.ping(ctx) != nil || service.cache.ping(ctx) != nil {
+		if service.db.ping(ctx) != nil {
 			respond(writer, 503, map[string]string{"status": "unavailable"})
 			return
 		}
@@ -225,16 +175,11 @@ func (service server) routes() http.Handler {
 		ctx := request.Context()
 		switch request.Method {
 		case http.MethodGet:
-			if value, found := service.cache.get(ctx, id); found {
-				respond(writer, 200, value)
-				return
-			}
 			value, err := service.db.get(ctx, id)
 			if err != nil {
 				service.fail(writer, err)
 				return
 			}
-			service.cache.set(ctx, value)
 			respond(writer, 200, value)
 		case http.MethodPut:
 			value, err := parseItem(request)
@@ -248,14 +193,12 @@ func (service server) routes() http.Handler {
 				service.fail(writer, err)
 				return
 			}
-			service.cache.delete(ctx, id)
 			respond(writer, 200, value)
 		case http.MethodDelete:
 			if err := service.db.delete(ctx, id); err != nil {
 				service.fail(writer, err)
 				return
 			}
-			service.cache.delete(ctx, id)
 			writer.WriteHeader(204)
 		}
 	})
@@ -282,16 +225,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	redisOptions, err := redis.ParseURL(env("REDIS_URL", "redis://localhost:6379/0"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	redisOptions.DialTimeout = time.Second
-	redisOptions.ReadTimeout = time.Second
-	redisOptions.WriteTimeout = time.Second
-	redisClient := redis.NewClient(redisOptions)
-	defer redisClient.Close()
-	httpServer := &http.Server{Addr: ":8080", Handler: (server{postgresStore{pool}, redisCache{redisClient}}).routes(), ReadHeaderTimeout: 5 * time.Second}
+	httpServer := &http.Server{Addr: ":8080", Handler: (server{postgresStore{pool}}).routes(), ReadHeaderTimeout: 5 * time.Second}
 	stop, stopSignals := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stopSignals()
 	go func() {
