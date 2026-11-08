@@ -1,0 +1,27 @@
+services:
+  migrate:
+    build: .
+    command: python manage.py migrate --noinput
+    volumes:
+      - ticket-data:/data
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ticket-data:/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  worker:
+    build: .
+    command: python manage.py runworker
+    restart: unless-stopped
+    volumes:
+      - ticket-data:/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+volumes:
+  ticket-data:

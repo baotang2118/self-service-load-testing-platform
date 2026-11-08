@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">WORKSPACE <span>/</span> OVERVIEW</div><h1>Ticket dashboard<span class="accent">.</span></h1><p class="muted">Development and operations requests</p></div><a class="button-primary" href="{% url 'ticket_create' %}"><span class="plus">+</span> New ticket</a></div>
+<section class="metrics" aria-label="Ticket summary">
+  <div class="metric"><span class="metric-label">TOTAL TICKETS</span><strong>{{ total_count }}</strong><span class="metric-note">All requests</span></div>
+  <div class="metric"><span class="metric-label">AWAITING REVIEW</span><strong>{{ waiting_count }}</strong><span class="metric-note"><i class="dot dot-amber"></i> Needs approval</span></div>
+  <div class="metric"><span class="metric-label">IN PROGRESS</span><strong>{{ active_count }}</strong><span class="metric-note"><i class="dot dot-blue"></i> Queued or running</span></div>
+  <div class="metric"><span class="metric-label">COMPLETED</span><strong>{{ complete_count }}</strong><span class="metric-note"><i class="dot dot-green"></i> Successfully finished</span></div>
+</section>
+<section class="ticket-section"><div class="section-heading"><div><span class="eyebrow">THE WORK QUEUE</span><h2>All tickets <span class="count">{{ total_count }}</span></h2></div><form method="get"><label class="visually-hidden" for="status-filter">Filter by status</label><select class="form-select filter" id="status-filter" name="status" onchange="this.form.submit()"><option value="">All statuses</option>{% for value, label in statuses %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><noscript><button type="submit">Filter</button></noscript></form></div>
+<div class="table-wrap"><table class="ticket-table"><thead><tr><th>REQUEST</th><th>STATUS</th><th>REQUESTED BY</th><th>CREATED</th><th><span class="visually-hidden">Details</span></th></tr></thead><tbody>
+{% for ticket in tickets %}<tr><td><a class="ticket-link" href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a><span class="ticket-id">TKT-{{ ticket.pk|stringformat:'04d' }}</span></td><td><span class="status status-{{ ticket.status }}"><i></i>{{ ticket.get_status_display }}</span></td><td>{{ ticket.creator.username }}</td><td>{{ ticket.created_at|date:'M d, Y' }}</td><td><a class="arrow-link" href="{% url 'ticket_detail' ticket.pk %}" aria-label="View {{ ticket.title }}">&rarr;</a></td></tr>
+{% empty %}<tr><td colspan="5" class="empty">No tickets found.</td></tr>{% endfor %}
+</tbody></table></div></section>
+<div class="dashboard-foot"><span><i class="dot dot-green"></i> Dashboard online</span></div>
+<script>window.setTimeout(() => { if (!document.hidden && document.activeElement.tagName !== 'SELECT') window.location.reload(); }, 15000);</script>
+{% endblock %}
