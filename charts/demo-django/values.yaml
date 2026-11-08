@@ -1,0 +1,17 @@
+replicaCount: 1
+image:
+  repository: demo-django
+  tag: local
+  pullPolicy: IfNotPresent
+service:
+  port: 8000
+postgres:
+  host: tickets-db-postgres
+  port: 5432
+  database: tickets
+  username: tickets
+  existingSecret: tickets-db-database-credentials
+  passwordKey: postgres-password
+redis:
+  url: redis://demo-cache-redis:6379/0
+resources: {}
