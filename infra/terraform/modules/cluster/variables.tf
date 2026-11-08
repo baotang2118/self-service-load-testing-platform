@@ -32,6 +32,12 @@ variable "operator_role_arn" {
   type        = string
 }
 
+variable "additional_admin_principal_arns" {
+  description = "Additional IAM principals granted EKS cluster administrator access."
+  type        = set(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Tags applied to cluster resources."
   type        = map(string)

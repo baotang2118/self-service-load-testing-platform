@@ -21,13 +21,14 @@ module "network" {
 module "cluster" {
   source = "../../modules/cluster"
 
-  name               = var.project_name
-  kubernetes_version = var.cluster_version
-  private_subnet_ids = module.network.private_subnet_ids
-  public_subnet_ids  = module.network.public_subnet_ids
-  cluster_admin_cidr = var.cluster_admin_cidr
-  operator_role_arn  = var.operator_role_arn
-  tags               = local.tags
+  name                            = var.project_name
+  kubernetes_version              = var.cluster_version
+  private_subnet_ids              = module.network.private_subnet_ids
+  public_subnet_ids               = module.network.public_subnet_ids
+  cluster_admin_cidr              = var.cluster_admin_cidr
+  operator_role_arn               = var.operator_role_arn
+  additional_admin_principal_arns = var.additional_admin_principal_arns
+  tags                            = local.tags
 }
 
 module "ecr" {

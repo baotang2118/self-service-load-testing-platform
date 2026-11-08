@@ -21,6 +21,7 @@ Set these inputs before running Terraform:
 
 - `cluster_admin_cidr`: your current public IP as a CIDR, usually `a.b.c.d/32`. The EKS API is public but restricted to this CIDR; `0.0.0.0/0` is rejected.
 - `operator_role_arn`: your AWS IAM role ARN. It receives EKS cluster-admin permissions, so use a role you control.
+- `additional_admin_principal_arns`: additional IAM principals with EKS cluster-admin access. The load-test environment defaults to the `baotd` user in account `260201160134`; override with a set of existing IAM principal ARNs or an empty set as appropriate. Add `baotang` only after that IAM user exists.
 - `budget_alert_email`: email address for AWS Budget notifications.
 - `terraform_role_policy_arn`: ARN of a reviewed IAM policy for the GitHub Terraform role. Keep this policy limited to the required Terraform resources and state bucket; do not attach `AdministratorAccess`.
 
@@ -71,6 +72,8 @@ kubectl get nodes
 ```
 
 The EKS public endpoint is restricted to your configured IP. Update `TF_VAR_cluster_admin_cidr` if your IP changes. GitHub-hosted runners do not receive Kubernetes access and cannot deploy workloads.
+
+Terraform manages EKS access entries and cluster-admin policy associations for the operator role and additional admin principals. If an entry or association was created manually on an existing cluster, import it into Terraform state before applying to avoid a conflict.
 
 ## GitHub Actions setup
 
