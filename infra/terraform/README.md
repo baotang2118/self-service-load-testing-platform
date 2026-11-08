@@ -1,6 +1,6 @@
 # AWS Terraform environment
 
-This configuration creates a short-lived demo VPC, an EKS cluster with one small managed node group, an ECR repository, GitHub Actions OIDC trust, and a project-tagged AWS Budget. It does not deploy the Django application, Postgres, Redis, or container images.
+This configuration creates a short-lived demo VPC, an EKS cluster with one small managed node group, an ECR repository, GitHub Actions OIDC trust, and a project-tagged AWS Budget. It does not deploy the Django application, Postgres, or container images.
 
 ## Layout
 

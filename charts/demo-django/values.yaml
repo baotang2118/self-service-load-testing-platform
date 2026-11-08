@@ -12,6 +12,4 @@ postgres:
   username: tickets
   existingSecret: tickets-db-database-credentials
   passwordKey: postgres-password
-redis:
-  url: redis://demo-cache-redis:6379/0
 resources: {}

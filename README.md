@@ -11,9 +11,9 @@ configuration, load generation, result reporting, or per-test isolation).
 - `webapp-ticket-system/`: Django ticket submission and DevOps approval demo;
 	its worker runs a fixed placeholder task, not infrastructure operations.
 - `demo-django/` and `demo-go/`: independent JSON CRUD APIs backed by shared
-	PostgreSQL and Redis, intended as representative service/load-test targets.
+	PostgreSQL, intended as representative service/load-test targets.
 - `charts/`: Helm charts for the ticket app, CRUD services, and their
-	PostgreSQL and Redis dependencies.
+	PostgreSQL dependency.
 - `infra/terraform/`: reusable AWS modules and a short-lived VPC, EKS, ECR,
 	GitHub OIDC, and budget foundation. It does not deploy the demo applications.
 - `docs/plan.md`: intended platform design; `docs/assignment.md`: assignment
@@ -39,8 +39,8 @@ connected to the standalone CRUD services or the AWS Terraform stack.
 ## Demo CRUD services
 
 The standalone Django and Go services expose the same JSON API as independent
-load-test targets. They share PostgreSQL and Redis, but each owns its own table
-and cache keys. The existing ticket application is unaffected.
+load-test targets. They share PostgreSQL, but each owns its own table. The
+existing ticket application is unaffected.
 
 ### Run locally
 
@@ -51,9 +51,8 @@ docker compose -f compose.demo.yaml up --build -d
 ```
 
 Django is available at `http://localhost:8001`, Go at
-`http://localhost:8002`. PostgreSQL stores data in a named Compose volume;
-Redis is ephemeral. Each service creates its own schema on startup. No seed
-data is required.
+`http://localhost:8002`. PostgreSQL stores data in a named Compose volume. Each
+service creates its own schema on startup. No seed data is required.
 
 Use either base URL with these examples (the returned `id` may differ):
 
@@ -70,7 +69,7 @@ The `name` must be a nonempty string of at most 255 characters;
 `description` is an optional string. Successful create, read/update, and
 delete requests return 201, 200, and 204 respectively. Invalid input returns
 400, a missing item returns 404, and unsupported methods return 405.
-`/health/live` checks the process; `/health/ready` checks PostgreSQL and Redis.
+``/health/live` checks the process; `/health/ready` checks PostgreSQL.
 
 To stop the stack without deleting the database, run
 `docker compose -f compose.demo.yaml down`. Add `-v` to also delete the demo
@@ -87,9 +86,7 @@ docker build -t demo-go:local ./demo-go
 kind load docker-image demo-django:local demo-go:local
 
 helm install tickets-db ./charts/postgres-pgadmin
-helm install demo-cache ./charts/redis
 kubectl rollout status deployment/tickets-db-postgres
-kubectl rollout status deployment/demo-cache-redis
 helm install demo-django ./charts/demo-django
 helm install demo-go ./charts/demo-go
 kubectl rollout status deployment/demo-django
@@ -101,8 +98,8 @@ For other clusters, push both images to a registry and configure
 default charts expect the releases shown above in the same namespace. If
 dependency release names or credentials differ, set `postgres.host`,
 `postgres.port`, `postgres.database`, `postgres.username`,
-`postgres.existingSecret`, `postgres.passwordKey`, and `redis.url` in both
-application charts. The PostgreSQL Secret must already exist in that namespace.
+`postgres.existingSecret` and `postgres.passwordKey` in both application charts.
+The PostgreSQL Secret must already exist in that namespace.
 
 Forward each service in a separate terminal, then use the API examples above:
 
@@ -115,7 +112,7 @@ Django migrations run in an init container; Go creates its own table on
 startup. Both deployments default to one replica. Coordinating Django
 migrations or Go's initial table creation across simultaneous replicas is not
 handled by this prototype. Remove the applications with `helm uninstall
-demo-django demo-go`; uninstall the dependency releases separately. Uninstalling
+demo-django demo-go`; uninstall the PostgreSQL release separately. Uninstalling
 the PostgreSQL chart deletes its PVC and may permanently delete data.
 
 ### Test
@@ -141,7 +138,3 @@ These APIs have no authentication or authorization and must not be exposed to
 untrusted networks. The credentials, permissive Django hosts, and chart defaults
 are for local demos only; Kubernetes Secrets and Helm values are not a
 production secret-management solution. PostgreSQL is the source of truth.
-Redis caches individual reads for 60 seconds and is invalidated on writes;
-concurrent reads or a failed invalidation can briefly serve stale values until
-the TTL expires. Cache errors fall back to PostgreSQL, but readiness fails while
-Redis is unreachable, so Kubernetes will stop routing new traffic to the pod.
