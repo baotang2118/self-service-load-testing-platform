@@ -6,7 +6,7 @@ from tickets.worker import fail_interrupted, run_next
 
 
 class Command(BaseCommand):
-    help = "Run the single SQLite ticket worker."
+    help = "Run the single ticket worker."
 
     def handle(self, *args, **options):
         interrupted = fail_interrupted()

@@ -1,6 +1,6 @@
 # Opsdesk ticket demo
 
-A local Django and SQLite demo for submitting DevOps requests, approving or rejecting them, and running a fixed placeholder task after approval.
+A local Django and PostgreSQL demo for submitting DevOps requests, approving or rejecting them, and running a fixed placeholder task after approval.
 
 ## Docker setup
 
@@ -11,11 +11,15 @@ docker compose up --build -d
 docker compose exec web python manage.py createsuperuser
 ```
 
-Open http://127.0.0.1:8000/ and sign in. The SQLite database is stored in the `ticket-data` Docker volume. To stop the containers without deleting the data, run `docker compose down`.
+Open http://127.0.0.1:8000/ and sign in. Compose starts a local PostgreSQL server and stores its data in the `postgres-data` Docker volume. To stop the containers without deleting the data, run `docker compose down`.
+
+The local database defaults to database `tickets`, user `tickets`, and password `tickets-local-only`. It is exposed on `127.0.0.1:5432`; set `POSTGRES_PUBLISHED_PORT` if that port is in use. These credentials are for local development only.
+
+To use another PostgreSQL server, set `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, and `POSTGRES_PORT` in your environment or a local `.env` file before starting Compose. The host must be reachable from inside the containers. Set `PGSSLMODE` when required by the server, for example `require` or `verify-full` (the default is `prefer`). Compose still starts its local database service, but the application connects to the configured host. The Compose database credentials initialize a new volume only; changing them later does not change an existing database's credentials.
 
 ## Local uv setup
 
-Requires Python 3.12 to 3.14 and [uv](https://docs.astral.sh/uv/). From this directory:
+Requires Python 3.12 to 3.14, [uv](https://docs.astral.sh/uv/), and a running PostgreSQL server. Set `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, and `POSTGRES_PORT` as needed before running the commands below. The defaults are `tickets`, `tickets`, an empty password, `localhost`, and `5432`, respectively. Set `PGSSLMODE` if your server requires it. Both the web process and worker need the same settings. From this directory:
 
 ```sh
 uv venv
@@ -31,7 +35,9 @@ In a second terminal in the same directory, start exactly one worker:
 uv run python manage.py runworker
 ```
 
-The local database defaults to `db.sqlite3` in this directory. Set `SQLITE_PATH` to an absolute database file path to use a different location. The containing directory must already exist and be writable. Both processes must use the same path.
+For example, to use the Compose PostgreSQL service locally, run `docker compose up -d db` and set `POSTGRES_PASSWORD` to `tickets-local-only` in both terminals. A Compose `.env` file is not automatically loaded by local `uv run` commands.
+
+Running migrations creates tables in PostgreSQL; it does not transfer existing data from SQLite. The existing SQLite database remains untouched.
 
 ## Demo workflow
 
@@ -44,10 +50,12 @@ The single worker runs only a fixed placeholder script, not commands supplied by
 
 ## Verification
 
+The PostgreSQL user must have permission to create a test database for pytest. Configure the connection as described above before running:
+
 ```sh
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .
 ```
 
-This is a demo, not a production deployment: it uses Django's development server, a demo secret and debug mode by default, SQLite, and a single worker. Do not expose it publicly or run real infrastructure tasks without additional security and operational controls. Bootstrap and fonts load from external CDNs.
+This is a demo, not a production deployment: it uses Django's development server, a demo secret and debug mode by default, local development database credentials, and a single worker. Do not expose it publicly or run real infrastructure tasks without additional security and operational controls. Bootstrap and fonts load from external CDNs.

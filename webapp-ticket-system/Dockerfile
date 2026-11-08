@@ -6,5 +6,3 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv UV_PYTHON_DOWNLOADS=never PATH="/opt/venv/b
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 COPY . .
-RUN mkdir -p /data
-ENV SQLITE_PATH=/data/db.sqlite3
