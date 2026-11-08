@@ -1,13 +1,40 @@
-# GEOCOMPLY ASSIGNMENT
+# Self-Service Load Testing Platform
 
-Working prototype. 
-○ Runnable end-to-end for at least one representative microservice. A trivial sample 
-service you provide is fine. 
-○ IaC modules for cloud resources, structured the way you would ship them for real 
-reuse. 
-○ A CI/CD pipeline. 
-○ A demo video showing the working product. 
-○ A README explaining how to run it locally or in the cloud.
+Assignment prototype for exploring a self-service load-testing platform. The
+repository currently contains a ticket approval demo, two independent CRUD
+services for local and Kubernetes demos, and a short-lived AWS infrastructure
+foundation. It does not yet implement the end-to-end load-test workflow (test
+configuration, load generation, result reporting, or per-test isolation).
+
+## Repository components
+
+- `webapp-ticket-system/`: Django ticket submission and DevOps approval demo;
+	its worker runs a fixed placeholder task, not infrastructure operations.
+- `demo-django/` and `demo-go/`: independent JSON CRUD APIs backed by shared
+	PostgreSQL and Redis, intended as representative service/load-test targets.
+- `charts/`: Helm charts for the ticket app, CRUD services, and their
+	PostgreSQL and Redis dependencies.
+- `infra/terraform/`: reusable AWS modules and a short-lived VPC, EKS, ECR,
+	GitHub OIDC, and budget foundation. It does not deploy the demo applications.
+- `docs/plan.md`: intended platform design; `docs/assignment.md`: assignment
+	brief. `WRITEUP.md` is currently an unfilled writeup scaffold.
+- `AI-USAGE.md`: AI tools, representative prompts, and validation notes.
+
+## AWS Terraform infrastructure
+
+The short-lived AWS infrastructure foundation, its modules, setup requirements,
+and teardown instructions are documented in
+[infra/terraform/README.md](infra/terraform/README.md). AWS resources are not
+created automatically. Review the IAM policy, Terraform plan, and cost estimate
+before applying. The scheduled workflow can destroy the stack after its
+configured expiry; see the infrastructure guide for required GitHub environment
+protection and setup.
+
+## Opsdesk ticket demo
+
+The separate ticket app has its own local Docker Compose and Helm instructions
+in [webapp-ticket-system/README.md](webapp-ticket-system/README.md). It is not
+connected to the standalone CRUD services or the AWS Terraform stack.
 
 ## Demo CRUD services
 
