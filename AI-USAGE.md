@@ -4,3 +4,21 @@ AI tools: you can use any AI coding assistant or agent Copilot, Claude, Curso
 Include an AI-USAGE.md, documenting: which tools you used, representative prompts and any 
 agentic workflow or configuration you set up for this assignment, and how you validated what the 
 AI produced before using it.
+
+## Demo CRUD services
+
+- Tool: GitHub Copilot in VS Code, with repository exploration and a reviewed
+	implementation plan before editing.
+- Representative request: "add 2 demo CRUD microservices + its helm charts:
+	service 1: python django; service 2: golang; both services can connect to
+	postgresql + redis and to some CRUD. keep it simple as this is a prototype."
+- The user selected independent records for the two services. Copilot used
+	repository exploration agents during planning and implemented the services,
+	charts, Compose stack, tests, and documentation.
+- Validation: Django pytest, Ruff, migration consistency, and Django system
+	checks; Go tests and `go vet`; Helm lint and template rendering with
+	dependency overrides; and a YAML parse of the Compose file. The two HTTP
+	integration tests were skipped because Docker, Kubernetes, PostgreSQL, and
+	Redis executables were unavailable. The live stack and container images
+	therefore still require verification in an environment with Docker or a
+	Kubernetes cluster.
