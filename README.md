@@ -42,7 +42,7 @@ docker compose -f compose.demo.yaml up --build -d
 
 Django is available at `http://localhost:8001`, Go at
 `http://localhost:8002`. PostgreSQL stores data in a named Compose volume. Each
-service creates its own schema on startup. No seed data is required.
+service initializes its own table on startup. No seed data is required.
 
 Use either base URL with these examples (the returned `id` may differ):
 
@@ -59,7 +59,7 @@ The `name` must be a nonempty string of at most 255 characters;
 `description` is an optional string. Successful create, read/update, and
 delete requests return 201, 200, and 204 respectively. Invalid input returns
 400, a missing item returns 404, and unsupported methods return 405.
-``/health/live` checks the process; `/health/ready` checks PostgreSQL.
+`/health/live` checks the process; `/health/ready` checks PostgreSQL.
 
 To stop the stack without deleting the database, run
 `docker compose -f compose.demo.yaml down`. Add `-v` to also delete the demo
@@ -113,6 +113,7 @@ uv run --directory demo-django ruff check .
 go -C demo-go test ./...
 helm lint charts/demo-django
 helm lint charts/demo-go
+helm lint charts/postgres-pgadmin
 ```
 
 To run the HTTP integration tests against the running Compose stack or the two
