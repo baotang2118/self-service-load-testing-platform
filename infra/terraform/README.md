@@ -67,7 +67,7 @@ Only after reviewing the plan and cost estimate, apply:
 
 ```powershell
 terraform -chdir=infra/terraform/envs/loadtest apply
-aws eks update-kubeconfig --region us-east-1 --name geocomly-loadtest
+aws eks update-kubeconfig --region us-east-1 --name geocomply-loadtest
 kubectl get nodes
 ```
 

@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "Prefix for resources created by this environment."
   type        = string
-  default     = "geocomly-loadtest"
+  default     = "geocomply-loadtest"
 }
 
 variable "aws_region" {
