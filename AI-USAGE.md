@@ -39,3 +39,5 @@ AI produced before using it.
 	initialization, validation, plans, and GitHub workflow execution remain
 	unverified. Review the generated IAM permissions policy and AWS cost estimate
 	before using the workflow in an account.
+
+## AI-Assisted Engineering Report: Ephemeral Load Testing Engine on AWS
