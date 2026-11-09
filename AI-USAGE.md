@@ -72,3 +72,7 @@ Development was orchestrated via GitHub Copilot, customized through domain-speci
 
 - **Instructions & Skills:** Acts as an automated Staff Platform Reviewer evaluating output strictly on security compliance, performance bottlenecks, dead code, FinOps implications, and maintainability.
 - **Focus:** Detecting unpinned versions, missing container resource limits, broad IAM wildcard statements, and Terraform state anti-patterns.
+
+## 2. Representative Prompts Across the Development Lifecycle
+
+Prompts were structured sequentially across architecture scoping, cloud design, and code authoring:
