@@ -11,26 +11,31 @@ The primary AI platform utilized was GitHub Copilot, leveraged across conversati
 ### Python Developer Persona
 
 - **Instructions & Skills:** Focuses on rapid prototyping, maintainability, and minimal boilerplate using Django with `uv` for dependency resolution and lockfile synchronization (`uv.lock`), alongside `ruff` for static linting and formatting.
+- **Instruction file:** [.github/instructions/python-developer.md](.github/instructions/python-developer.md)
 - **Focus:** Utilizing Django’s built-in batteries (ORM, migrations, management commands, `JsonResponse`) to stand up mock endpoints (`/health/`, `/workload/`) and database queries without custom plumbing or complex async overhead.
 
 ### Golang Developer Persona
 
 - **Instructions & Skills:** Configured for idiomatic Go 1.22+ patterns, zero-allocation serialization, non-blocking HTTP handlers, standard context propagation, and explicit error handling.
+- **Instruction file:** [.github/instructions/golang-developer.md](.github/instructions/golang-developer.md)
 - **Focus:** Scaffolding low-overhead target APIs, minimal container images (distroless/scratch), and Prometheus instrumentation endpoints.
 
 ### DevOps Engineer Persona (Helm, Kubernetes, CI/CD)
 
 - **Instructions & Skills:** Constrained to production Kubernetes standards, parameterized Helm v3 best practices, secure defaults (read-only root filesystems, non-root users), and ephemeral namespace isolation.
+- **Instruction file:** [.github/instructions/devops-engineer.md](.github/instructions/devops-engineer.md)
 - **Focus:** Authoring reusable Helm charts, defining `LimitRanges`, `ResourceQuotas`, default-deny `NetworkPolicies`, and CI/CD pipelines.
 
 ### AWS Cloud Engineering Persona
 
 - **Instructions & Skills:** Enforces AWS Well-Architected Framework standards, modular Terraform 1.5+ design principles, least-privilege IAM policies, AWS VPC subnet topologies, ECR lifecycle policies, and EKS Spot/On-Demand managed node isolation.
+- **Instruction file:** [.github/instructions/cloud-aws-engineer.md](.github/instructions/cloud-aws-engineer.md)
 - **Focus:** Architecting reusable Terraform modules for VPC, ECR, and EKS while proactively identifying requirement ambiguities before emitting code.
 
 ### Platform Code Reviewer Persona
 
 - **Instructions & Skills:** Acts as an automated Staff Platform Reviewer evaluating output strictly on security compliance, performance bottlenecks, dead code, FinOps implications, and maintainability.
+- **Instruction file:** [.github/instructions/code-reviewer.md](.github/instructions/code-reviewer.md)
 - **Focus:** Detecting unpinned versions, missing container resource limits, broad IAM wildcard statements, and Terraform state anti-patterns.
 
 ## 2. Representative Prompts Across the Development Lifecycle
