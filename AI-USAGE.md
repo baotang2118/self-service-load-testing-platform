@@ -91,3 +91,56 @@ Prompts were structured sequentially across architecture scoping, cloud design, 
 ## 3. Agentic Workflow & Continuous Knowledge Loop
 
 To prevent context drift and hallucination across multi-file implementations, tasks followed a 6-step agentic execution loop:
+
+[ 1. Plan ] ──────> [ 2. Agent Code ] ──────> [ 3. Code Format ]
+                                                      │
+[ 6. Clean Redundant ] <── [ 5. Update Docs ] <── [ 4. Code Review ]
+
+1. Plan: Break each feature down into scoped, discrete contracts (e.g., input variables, outputs, interface definitions).
+​2. Agent Code: Emit implementation code strictly bound to the active persona's system instructions and technical requirements.
+​3. Code Format: Apply automated formatters immediately after code generation:
+​Python: ruff format and ruff check --fix
+​Golang: gofmt -s -w
+​Terraform: terraform fmt
+​4. Code Review: Pass diffs through the Platform Code Reviewer persona to identify missing timeouts, unhandled errors, or resource quota gaps.  
+​5. Update Knowledge Base, Document & README: Generate inline docstrings, update technical module READMEs, and document architectural decisions.
+​6. Clean & Prune Redundant Knowledge: Purge intermediate scratchpad notes, obsolete manifests, and temporary artifacts from the workspace context to minimize token bloat.
+4. Multi-Layer Validation Framework (AWS & Code Verification)
+​AI-generated code was treated as unverified input and subjected to a four-stage validation pipeline before integration:
+[ AI Code Output ]
+       ↓
+[ 1. Syntax, Types & Static Linting ] 
+       │ • Python: ruff check, uv lock --check
+       │ • Go: go vet, golangci-lint
+       │ • Terraform: terraform fmt -check, terraform validate, tflint
+       ↓
+[ 2. Security & Policy Audit ]
+       │ • Containers: Hadolint, Trivy (CVE scans on base images)
+       │ • AWS IAM & IaC: Checkov / tfsec (remove wildcard actions, verify encryption)
+       │ • Kubernetes: kubeval, helm lint
+       ↓
+[ 3. Local Dry-Run & Synthesis ]
+       │ • Helm: helm template --debug
+       │ • Docker: Build and run test in local Kind/Minikube cluster
+       ↓
+[ 4. Target AWS Cloud Validation ]
+       │ • ECR: Authenticate and push images (aws ecr get-login-password)
+       │ • EKS: Deploy via Helm, verify EKS Access Entries and RBAC
+       │ • Guardrails: Verify ResourceQuotas, NetworkPolicies, and TTL reaper execution
+
+1. Python (uv & ruff) Verification
+​Dependency Locking: Checked using uv lock --check to ensure all transitive dependencies resolve deterministically without version drift.
+​Linting & Style: Executed ruff check . and ruff format --check . to enforce PEP 8 conventions, correct import sorting, and static bug detection.
+​Container Optimization: Built using official ghcr.io/astral-sh/uv multi-stage build patterns, verifying layer caching and non-root execution inside container images.  
+​2. AWS Infrastructure & IaC Verification
+​Static IaC Checks: Verified with terraform validate and tflint to catch missing parameters, invalid interpolation, and deprecated provider arguments.  
+​Security & Policy Analysis: Audited generated IAM policies to eliminate wildcard permissions ("Action": "*", "Resource": "*") and enforce least privilege (e.g., scoping ECR push tokens and EKS cluster admin access entries).  
+​Cost Allocation & FinOps: Confirmed that AWS resource tags (Environment, ManagedBy, TestRunId) were parameterized across all modules for AWS Cost Explorer visibility.
+
+3. Kubernetes & Container Security
+​Dockerfile Linting: Validated with hadolint to enforce explicit base image digests, non-root users (USER 10001), and multi-stage build best practices.  
+​Vulnerability Scanning: Ran trivy image against container images before publishing to Amazon ECR, blocking releases with Critical or High CVEs.  
+​Template Rendering: Rendered Helm manifests locally with helm template and validated schemas against Kubernetes 1.30+ APIs using helm lint.  
+​4. Ephemeral Runtime Testing
+​Local Smoke Testing: Validated chart deployment and pod readiness in a local Kind cluster before interacting with cloud infrastructure.  
+​Cloud Guardrail Enforcement: Tested live on Amazon EKS to ensure ResourceQuota limits blocked pod over-provisioning, NetworkPolicy rules isolated the ephemeral namespace, and the TTL reaper script terminated expired resources automatically.  
