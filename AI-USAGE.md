@@ -57,3 +57,8 @@ Development was orchestrated via GitHub Copilot, customized through domain-speci
 
 - **Instructions & Skills:** Configured for idiomatic Go 1.22+ patterns, zero-allocation serialization, non-blocking HTTP handlers, standard context propagation, and explicit error handling.
 - **Focus:** Scaffolding low-overhead target APIs, minimal container images (distroless/scratch), and Prometheus instrumentation endpoints.
+
+### DevOps Engineer Persona (Helm, Kubernetes, CI/CD)
+
+- **Instructions & Skills:** Constrained to production Kubernetes standards, parameterized Helm v3 best practices, secure defaults (read-only root filesystems, non-root users), and ephemeral namespace isolation.
+- **Focus:** Authoring reusable Helm charts, defining LimitRanges, ResourceQuotas, default-deny NetworkPolicies, and CI/CD pipelines.
