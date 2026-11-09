@@ -76,3 +76,14 @@ Development was orchestrated via GitHub Copilot, customized through domain-speci
 ## 2. Representative Prompts Across the Development Lifecycle
 
 Prompts were structured sequentially across architecture scoping, cloud design, and code authoring:
+
+| Lifecycle Stage | Representative Prompt | Focus & Key Constraints |
+| --- | --- | --- |
+| Requirements Analysis | "Analyze the requirements of the assignment: identify non-negotiable platform guardrails, developer self-service goals, FinOps constraints, and core deliverables." | Deconstructs specifications into discrete platform deliverables. |
+| Execution Planning | "Plan what to do step-by-step to prototype an end-to-end self-service load testing engine in AWS within a 7-day timeline." | Sequences development into IaC scaffolding, Helm packaging, runner wiring, and pipeline automation. |
+| Python Service (uv + ruff) | "Develop a demo Python microservice managed with uv and formatted/linted via ruff. Provide a multi-stage Dockerfile using ghcr.io/astral-sh/uv to build a minimal image that exposes /health and /workload endpoints." | Produces dependency-locked, containerized services with fast build caching. |
+| Golang Service Scaffolding | "Develop a demo Golang microservice providing minimal memory footprint and structured JSON health/status endpoints." | Provides a compiled, high-performance alternative service under test. |
+| Dependency Helm Authoring | "Develop a Helm chart for PostgreSQL; keep it simple and optimized as an ephemeral prototype dependency for testing." | Packages a lightweight ephemeral database chart inside the test namespace. |
+| Service Helm Authoring | "Develop a Helm chart for the demo microservices with configurable CPU/memory requests, limits, probes, and NetworkPolicy templates." | Translates platform reliability standards into parameterized templates. |
+| AWS Cloud IaC Architecture | "Develop a Terraform module that provides an AWS EKS cluster, ECR, and VPC with public/private subnets. Ask at least 10 questions to clarify my intentions and constraints before writing any code." | Surfaces critical design decisions (EKS access entries, Spot node pools, CIDR sizing, NAT Gateways) before code generation. |
+| Code Review & Auditing | "Review this Python, Go, and Terraform code against security vulnerabilities, concurrency leaks, unpinned versions, and AWS least-privilege compliance." | Identifies static flaws and edge cases prior to cloud provisioning. |
