@@ -85,7 +85,7 @@ variable "github_repository" {
 variable "github_environments" {
   description = "GitHub environments allowed to assume the Terraform role."
   type        = list(string)
-  default     = ["terraform-plan", "terraform-apply", "terraform-destroy", "terraform-expiry"]
+  default     = ["terraform-plan", "terraform-apply", "terraform-destroy"]
 }
 
 variable "terraform_role_policy_arn" {

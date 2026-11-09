@@ -11,8 +11,6 @@ on:
           - plan
           - apply
           - destroy
-  schedule:
-    - cron: "17 8 * * *"
 
 permissions:
   contents: read
@@ -26,7 +24,7 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.event_name == 'schedule' && 'terraform-expiry' || inputs.operation == 'apply' && 'terraform-apply' || inputs.operation == 'destroy' && 'terraform-destroy' || 'terraform-plan' }}
+      name: ${{ inputs.operation == 'apply' && 'terraform-apply' || inputs.operation == 'destroy' && 'terraform-destroy' || 'terraform-plan' }}
     defaults:
       run:
         working-directory: infra/terraform/envs/loadtest
@@ -40,58 +38,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check configured expiry
-        id: expiry
-        if: github.event_name == 'schedule'
-        shell: bash
-        env:
-          DEMO_EXPIRES_AT: ${{ vars.DEMO_EXPIRES_AT }}
-        run: |
-          if [ -z "$DEMO_EXPIRES_AT" ]; then
-            echo "expired=false" >> "$GITHUB_OUTPUT"
-            echo "DEMO_EXPIRES_AT is not configured; leaving the stack untouched."
-            exit 0
-          fi
-          expiry_epoch=$(date -u -d "$DEMO_EXPIRES_AT" +%s)
-          now_epoch=$(date -u +%s)
-          if [ "$now_epoch" -ge "$expiry_epoch" ]; then
-            echo "expired=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "expired=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - uses: hashicorp/setup-terraform@v3
-        if: github.event_name == 'workflow_dispatch' || steps.expiry.outputs.expired == 'true'
         with:
           terraform_version: 1.10.5
 
       - name: Configure AWS credentials
-        if: github.event_name == 'workflow_dispatch' || steps.expiry.outputs.expired == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.TERRAFORM_AWS_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Initialize Terraform
-        if: github.event_name == 'workflow_dispatch' || steps.expiry.outputs.expired == 'true'
         run: terraform init -input=false -backend-config="bucket=$TF_STATE_BUCKET" -backend-config="key=loadtest/terraform.tfstate" -backend-config="region=us-east-1"
 
       - name: Validate Terraform
-        if: github.event_name == 'workflow_dispatch'
         run: terraform validate
 
       - name: Plan infrastructure
-        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'plan'
+        if: inputs.operation == 'plan'
         run: terraform plan -input=false
 
       - name: Apply infrastructure
-        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'apply'
+        if: inputs.operation == 'apply'
         run: terraform apply -input=false -auto-approve
 
-      - name: Destroy expired demo stack
-        if: github.event_name == 'schedule' && steps.expiry.outputs.expired == 'true'
-        run: terraform destroy -input=false -auto-approve
-
       - name: Destroy demo stack manually
-        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'destroy'
+        if: inputs.operation == 'destroy'
         run: terraform destroy -input=false -auto-approve
