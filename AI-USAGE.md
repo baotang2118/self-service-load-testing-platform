@@ -43,3 +43,12 @@ AI produced before using it.
 ## AI-Assisted Engineering Report: Ephemeral Load Testing Engine on AWS
 
 This report documents the systematic integration of generative AI into the architecture, implementation, and verification of the self-service ephemeral load testing engine on Amazon Web Services (AWS). Rather than relying on unstructured autocompletion, development followed a persona-driven, multi-stage agentic workflow with explicit linting, security scanning, and cloud policy validation guardrails.
+
+## 1. Tooling Ecosystem & Domain Personas
+
+Development was orchestrated via GitHub Copilot, customized through domain-specific prompts, instructions, and workspace toolchains:
+
+### Python Developer Persona (uv + ruff)
+
+- **Instructions & Skills:** Enforces modern Python 3.12+ patterns using `uv` for dependency resolution and lockfile synchronization (`uv.lock`), alongside `ruff` for static analysis, formatting, and import sorting.
+- **Focus:** Scaffolding lightweight, high-performance mock microservices (FastAPI), simulating realistic CPU spikes, database queries, and structured JSON health endpoints.
