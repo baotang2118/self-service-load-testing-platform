@@ -62,3 +62,8 @@ Development was orchestrated via GitHub Copilot, customized through domain-speci
 
 - **Instructions & Skills:** Constrained to production Kubernetes standards, parameterized Helm v3 best practices, secure defaults (read-only root filesystems, non-root users), and ephemeral namespace isolation.
 - **Focus:** Authoring reusable Helm charts, defining LimitRanges, ResourceQuotas, default-deny NetworkPolicies, and CI/CD pipelines.
+
+### AWS Cloud Engineering Persona
+
+- **Instructions & Skills:** Enforces AWS Well-Architected Framework standards, modular Terraform 1.5+ design principles, least-privilege IAM policies, AWS VPC subnet topologies, ECR lifecycle policies, and EKS Spot/On-Demand managed node isolation.
+- **Focus:** Architecting reusable Terraform modules for VPC, ECR, and EKS while proactively identifying requirement ambiguities before emitting code.
