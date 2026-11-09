@@ -87,3 +87,7 @@ Prompts were structured sequentially across architecture scoping, cloud design, 
 | Service Helm Authoring | "Develop a Helm chart for the demo microservices with configurable CPU/memory requests, limits, probes, and NetworkPolicy templates." | Translates platform reliability standards into parameterized templates. |
 | AWS Cloud IaC Architecture | "Develop a Terraform module that provides an AWS EKS cluster, ECR, and VPC with public/private subnets. Ask at least 10 questions to clarify my intentions and constraints before writing any code." | Surfaces critical design decisions (EKS access entries, Spot node pools, CIDR sizing, NAT Gateways) before code generation. |
 | Code Review & Auditing | "Review this Python, Go, and Terraform code against security vulnerabilities, concurrency leaks, unpinned versions, and AWS least-privilege compliance." | Identifies static flaws and edge cases prior to cloud provisioning. |
+
+## 3. Agentic Workflow & Continuous Knowledge Loop
+
+To prevent context drift and hallucination across multi-file implementations, tasks followed a 6-step agentic execution loop:
