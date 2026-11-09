@@ -1,19 +1,16 @@
 # Self-Service Load Testing Platform
 
 Assignment prototype for exploring a self-service load-testing platform. The
-repository currently contains a ticket approval demo, two independent CRUD
-services for local and Kubernetes demos, and a short-lived AWS infrastructure
-foundation. It does not yet implement the end-to-end load-test workflow (test
-configuration, load generation, result reporting, or per-test isolation).
+repository currently contains two independent CRUD services for local and
+Kubernetes demos, and a short-lived AWS infrastructure foundation. It does not
+yet implement the end-to-end load-test workflow (test configuration, load
+generation, result reporting, or per-test isolation).
 
 ## Repository components
 
-- `webapp-ticket-system/`: Django ticket submission and DevOps approval demo;
-	its worker runs a fixed placeholder task, not infrastructure operations.
 - `demo-django/` and `demo-go/`: independent JSON CRUD APIs backed by shared
 	PostgreSQL, intended as representative service/load-test targets.
-- `charts/`: Helm charts for the ticket app, CRUD services, and their
-	PostgreSQL dependency.
+- `charts/`: Helm charts for the CRUD services and their PostgreSQL dependency.
 - `infra/terraform/`: reusable AWS modules and a short-lived VPC, EKS, ECR,
 	GitHub OIDC, and budget foundation. It does not deploy the demo applications.
 - `docs/plan.md`: intended platform design; `docs/assignment.md`: assignment
@@ -30,17 +27,10 @@ before applying. The scheduled workflow can destroy the stack after its
 configured expiry; see the infrastructure guide for required GitHub environment
 protection and setup.
 
-## Opsdesk ticket demo
-
-The separate ticket app has its own local Docker Compose and Helm instructions
-in [webapp-ticket-system/README.md](webapp-ticket-system/README.md). It is not
-connected to the standalone CRUD services or the AWS Terraform stack.
-
 ## Demo CRUD services
 
 The standalone Django and Go services expose the same JSON API as independent
-load-test targets. They share PostgreSQL, but each owns its own table. The
-existing ticket application is unaffected.
+load-test targets. They share PostgreSQL, but each owns its own table.
 
 ### Run locally
 
