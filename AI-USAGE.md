@@ -67,3 +67,8 @@ Development was orchestrated via GitHub Copilot, customized through domain-speci
 
 - **Instructions & Skills:** Enforces AWS Well-Architected Framework standards, modular Terraform 1.5+ design principles, least-privilege IAM policies, AWS VPC subnet topologies, ECR lifecycle policies, and EKS Spot/On-Demand managed node isolation.
 - **Focus:** Architecting reusable Terraform modules for VPC, ECR, and EKS while proactively identifying requirement ambiguities before emitting code.
+
+### Platform Code Reviewer Persona
+
+- **Instructions & Skills:** Acts as an automated Staff Platform Reviewer evaluating output strictly on security compliance, performance bottlenecks, dead code, FinOps implications, and maintainability.
+- **Focus:** Detecting unpinned versions, missing container resource limits, broad IAM wildcard statements, and Terraform state anti-patterns.
