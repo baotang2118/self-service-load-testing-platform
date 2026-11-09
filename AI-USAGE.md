@@ -41,3 +41,5 @@ AI produced before using it.
 	before using the workflow in an account.
 
 ## AI-Assisted Engineering Report: Ephemeral Load Testing Engine on AWS
+
+This report documents the systematic integration of generative AI into the architecture, implementation, and verification of the self-service ephemeral load testing engine on Amazon Web Services (AWS). Rather than relying on unstructured autocompletion, development followed a persona-driven, multi-stage agentic workflow with explicit linting, security scanning, and cloud policy validation guardrails.
