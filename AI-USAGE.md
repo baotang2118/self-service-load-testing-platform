@@ -52,3 +52,8 @@ Development was orchestrated via GitHub Copilot, customized through domain-speci
 
 - **Instructions & Skills:** Enforces modern Python 3.12+ patterns using `uv` for dependency resolution and lockfile synchronization (`uv.lock`), alongside `ruff` for static analysis, formatting, and import sorting.
 - **Focus:** Scaffolding lightweight, high-performance mock microservices (FastAPI), simulating realistic CPU spikes, database queries, and structured JSON health endpoints.
+
+### Golang Developer Persona
+
+- **Instructions & Skills:** Configured for idiomatic Go 1.22+ patterns, zero-allocation serialization, non-blocking HTTP handlers, standard context propagation, and explicit error handling.
+- **Focus:** Scaffolding low-overhead target APIs, minimal container images (distroless/scratch), and Prometheus instrumentation endpoints.
