@@ -23,8 +23,8 @@ The short-lived AWS infrastructure foundation, its modules, setup requirements,
 and teardown instructions are documented in
 [infra/terraform/README.md](infra/terraform/README.md). AWS resources are not
 created automatically. Review the IAM policy, Terraform plan, and cost estimate
-before applying. The scheduled workflow can destroy the stack after its
-configured expiry; see the infrastructure guide for required GitHub environment
+before applying. Run the GitHub Actions workflow manually for plan, apply, or
+destroy; see the infrastructure guide for required GitHub environment
 protection and setup.
 
 ## Demo CRUD services

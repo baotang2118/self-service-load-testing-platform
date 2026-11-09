@@ -11,7 +11,7 @@ This configuration creates a short-lived demo VPC, an EKS cluster with one small
 - `modules/ecr/`: encrypted private image repository, scan-on-push, immutable tags, and image lifecycle.
 - `modules/github_oidc/`: repository/environment-specific GitHub OIDC role trust.
 - `modules/budget/`: monthly AWS Budget alert filtered by the `Project` resource tag.
-- `.github/workflows/terraform.yml`: manual plan/apply/destroy and configured expiry cleanup.
+- `.github/workflows/terraform.yml`: manually triggered plan/apply/destroy.
 
 ## Before provisioning
 
@@ -77,13 +77,12 @@ Terraform manages EKS access entries and cluster-admin policy associations for t
 
 ## GitHub Actions setup
 
-The workflow trusts only `baotang2118/self-service-load-testing-platform` through four exact GitHub environments: `terraform-plan`, `terraform-apply`, `terraform-destroy`, and `terraform-expiry`. Restrict all four environments to the `main` branch. Require reviewers for apply and manual destroy; leave expiry without a reviewer so scheduled cleanup can run automatically. Set these repository variables and secret:
+The workflow trusts only `baotang2118/self-service-load-testing-platform` through three exact GitHub environments: `terraform-plan`, `terraform-apply`, and `terraform-destroy`. Restrict all three environments to the `main` branch. Require reviewers for apply and destroy. Set these repository variables and secret:
 
 - Variables: `TERRAFORM_AWS_ROLE_ARN`, `TERRAFORM_ROLE_POLICY_ARN`, `TF_STATE_BUCKET`, `CLUSTER_ADMIN_CIDR`, `OPERATOR_ROLE_ARN`.
 - Secret: `BUDGET_ALERT_EMAIL`.
-- Optional variable: `DEMO_EXPIRES_AT` as a UTC date/time such as `2026-11-15T08:00:00Z`.
 
-The workflow supports manual `plan`, `apply`, and `destroy`. Its daily scheduled run destroys the stack after `DEMO_EXPIRES_AT`; an empty expiry leaves the stack untouched. The Terraform role policy must also permit read/write access to the configured state key and its `.tflock` object. The first state bootstrap and initial role setup are performed locally.
+Run the workflow manually from GitHub Actions and select `plan`, `apply`, or `destroy`; no scheduled runs are configured. The Terraform role policy must also permit read/write access to the configured state key and its `.tflock` object. The first state bootstrap and initial role setup are performed locally.
 
 ## Cleanup
 
