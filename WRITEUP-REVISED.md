@@ -6,7 +6,7 @@ Each item below is marked **Built** (in the repo today) or **Designed** (specifi
 
 - About 50 containerized services on AWS, mostly Django and Go with PostgreSQL, deployed to Kubernetes with Helm. CI is GitHub Actions.
 - One AWS account, no production data in tests, and teams own their Dockerfiles, Helm values and test scenarios.
-- Typical test: one service, up to a few hundred virtual users, 5-15 minutes, a handful of concurrent tests across the company. Small-scale assumptions like these justify a shared cluster and a small node pool. If tests were much bigger or more frequent, I would revisit them (see section 5).
+- Typical test: one service, up to a few hundred virtual users, 5-15 minutes, a handful of concurrent tests across the company. Small-scale assumptions like these justify a shared cluster and a small node pool. If tests were much bigger or more frequent, I would revisit them (see section 6).
 - Goal: move DevOps from running tests for teams to providing a platform they use without tickets. Platform guardrails replace the human gatekeeper.
 
 ## 2. Developer flow
@@ -24,7 +24,20 @@ Each item below is marked **Built** (in the repo today) or **Designed** (specifi
 | Load-test workflow, config schema, k6 runs, PR comment | **Designed** |
 | Per-test namespace, quota, network policy, reaper | **Designed** |
 
-## 3. Decisions and alternatives
+## 3. Developer experience
+
+The platform should fit into the service repository and existing GitHub workflow, rather than require a new portal, platform ticket, or AWS credentials. The key is to make adoption familiar, configuration safe, and results useful for the next engineering decision.
+
+| Developer need | Experience | Status |
+| :--- | :--- | :--- |
+| Start a test | Keep a small, version-controlled config with the service and start from a PR label or manual dispatch. | **Designed** |
+| Validate changes locally | Use the Django and Go sample services with the existing Compose or Helm setup; the end-to-end load-test flow is not yet available locally. | **Built** (samples); **Designed** (load-test flow) |
+| Understand the result | See p50/p95/p99, RPS, error rate, and threshold verdict in the PR; inspect the raw JSON artifact for detail. | **Designed** |
+| Catch mistakes before provisioning | Validate the config and enforce fixed caps before creating test resources, with an actionable error for invalid values. | **Designed** |
+
+This keeps the feedback loop close to code review while avoiding unnecessary infrastructure setup for routine iterations. The current repository provides representative services and deployment examples, but the self-service testing experience itself is still a design, not a working feature.
+
+## 4. Decisions and alternatives
 
 | Decision | Picked | Alternatives | Why |
 | :--- | :--- | :--- | :--- |
@@ -35,7 +48,7 @@ Each item below is marked **Built** (in the repo today) or **Designed** (specifi
 | Dependencies | Postgres container inside each test namespace, seeded with fixtures | Shared staging RDS; RDS per test; real downstream services | No data contention or leakage between tests, it starts in seconds, and it disappears with the namespace. The Postgres chart exists, but fixture seeding is **Designed**. |
 | Interface | Config in the repo plus a PR label or dispatch | Portal, Backstage, CLI | Lowest friction, versioned with the code, and it reuses GitHub authentication and review. Nothing new to maintain. |
 
-## 4. Guardrails and how each is enforced
+## 5. Guardrails and how each is enforced
 
 | Guardrail | Mechanism | Status |
 | :--- | :--- | :--- |
@@ -47,7 +60,7 @@ Each item below is marked **Built** (in the repo today) or **Designed** (specifi
 | Isolation | Per-namespace `ResourceQuota`, `LimitRange` and default-deny `NetworkPolicy` | **Designed** |
 | Input caps | Config rejected if it exceeds platform limits | **Designed** |
 
-## 5. Trade-offs accepted
+## 6. Trade-offs accepted
 
 - **Blast radius vs. speed:** tests share a cluster and node kernel. Quotas and network policies limit damage, but a noisy neighbor or kernel-level fault can still affect other tests. A dedicated AWS account for load testing keeps the radius off production.
 - **Result fidelity:** the load generator and the target share a small node pool, so the generator can skew results at higher load. The design fix is a tainted node group for load generators, which I consider the first thing to do after the foundation is complete.
@@ -59,7 +72,7 @@ Each item below is marked **Built** (in the repo today) or **Designed** (specifi
 - **GitHub as the single control plane:** it is convenient, but a GitHub outage or a misconfigured workflow blocks all testing. The cluster-side reaper is meant to limit orphaned resources when that happens.
 - **Security gaps today:** demo credentials (in Helm values and the Compose file) are for local use only. A real deployment needs a secrets manager, and test-run RBAC should be namespace-scoped rather than cluster-admin.
 
-## 6. If I had another week
+## 7. If I had another week
 
 1. Finish the Designed items: load-test workflow, k6 scenario and PR comment, per-namespace quota and network policy, reaper, and fixture seeding.
 2. Dedicated node pool with a taint for load generators (Spot where a restart is acceptable).
