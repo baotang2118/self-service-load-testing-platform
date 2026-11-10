@@ -1,0 +1,36 @@
+name: Demo API load test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-api-load-test
+  cancel-in-progress: false
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DEMO_DJANGO_URL: ${{ vars.DEMO_DJANGO_URL }}
+      DEMO_GO_URL: ${{ vars.DEMO_GO_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check target URLs are configured
+        run: |
+          test -n "$DEMO_DJANGO_URL" || { echo "Set repository variable DEMO_DJANGO_URL" >&2; exit 1; }
+          test -n "$DEMO_GO_URL" || { echo "Set repository variable DEMO_GO_URL" >&2; exit 1; }
+
+      - name: Run bounded k6 test
+        run: |
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE/loadtest:/work:ro" \
+            --workdir /work \
+            --env DEMO_DJANGO_URL \
+            --env DEMO_GO_URL \
+            grafana/k6:0.56.0 run k6.js
