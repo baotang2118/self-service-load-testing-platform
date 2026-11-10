@@ -35,11 +35,11 @@ variable "private_subnet_cidrs" {
 }
 
 variable "cluster_admin_cidr" {
-  description = "Your public IPv4 CIDR, usually your current public IP followed by /32. Never use 0.0.0.0/0."
-  type        = string
+  description = "Restricted IPv4 CIDRs allowed to reach the public EKS API endpoint."
+  type        = list(string)
   validation {
-    condition     = can(cidrhost(var.cluster_admin_cidr, 0)) && var.cluster_admin_cidr != "0.0.0.0/0"
-    error_message = "Set a valid, restricted CIDR for your current public IP; 0.0.0.0/0 is not allowed."
+    condition     = length(var.cluster_admin_cidr) > 0 && alltrue([for cidr in var.cluster_admin_cidr : try(cidrnetmask(cidr) != "0.0.0.0", false)])
+    error_message = "Provide at least one valid, restricted IPv4 CIDR; 0.0.0.0/0 is not allowed."
   }
 }
 

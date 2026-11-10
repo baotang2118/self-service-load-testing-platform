@@ -19,7 +19,7 @@ You need Terraform 1.10.5, AWS CLI credentials for a sandbox account, `kubectl`,
 
 Set these inputs before running Terraform:
 
-- `cluster_admin_cidr`: your current public IP as a CIDR, usually `a.b.c.d/32`. The EKS API is public but restricted to this CIDR; `0.0.0.0/0` is rejected.
+- `cluster_admin_cidr`: a nonempty list of allowed public IPv4 CIDRs, such as `["a.b.c.d/32", "e.f.g.h/32"]`. The EKS API is public but restricted to these CIDRs; a `/0` CIDR is rejected.
 - `operator_role_arn`: your AWS IAM role ARN. It receives EKS cluster-admin permissions, so use a role you control.
 - `additional_admin_principal_arns`: additional IAM principals with EKS cluster-admin access. The load-test environment defaults to the `baotd` user in account `260201160134`; override with a set of existing IAM principal ARNs or an empty set as appropriate. Add `baotang` only after that IAM user exists.
 - `budget_alert_email`: email address for AWS Budget notifications.
@@ -43,7 +43,7 @@ Keep the bootstrap state file secure. Do not destroy the state bucket as part of
 Authenticate to the sandbox account first (for example, with `aws configure sso`) and check the active identity with `aws sts get-caller-identity`. In PowerShell, set the required variables:
 
 ```powershell
-$env:TF_VAR_cluster_admin_cidr = "YOUR_PUBLIC_IP/32"
+$env:TF_VAR_cluster_admin_cidr = '["YOUR_PUBLIC_IP/32","ANOTHER_ALLOWED_IP/32"]'
 $env:TF_VAR_operator_role_arn = "arn:aws:iam::ACCOUNT_ID:role/YOUR_OPERATOR_ROLE"
 $env:TF_VAR_budget_alert_email = "you@example.com"
 $env:TF_VAR_terraform_role_policy_arn = "arn:aws:iam::ACCOUNT_ID:policy/YOUR_REVIEWED_TERRAFORM_POLICY"
@@ -71,7 +71,12 @@ aws eks update-kubeconfig --region us-east-1 --name geocomly-loadtest
 kubectl get nodes
 ```
 
-The EKS public endpoint is restricted to your configured IP. Update `TF_VAR_cluster_admin_cidr` if your IP changes. GitHub-hosted runners do not receive Kubernetes access and cannot deploy workloads. The separate [demo deployment workflow](../../README.md#deploy-to-eks-with-github-actions) requires a networked self-hosted runner and a dedicated deployment role.
+The EKS public endpoint is restricted to the configured CIDRs. Update
+`TF_VAR_cluster_admin_cidr` if an allowed IP changes. GitHub-hosted runners
+need an allowed egress IP and Kubernetes permissions to deploy workloads;
+standard hosted runners have dynamic IPs. The separate
+[demo deployment workflow](../../README.md#deploy-to-eks-with-github-actions)
+currently uses a networked self-hosted runner and a dedicated deployment role.
 
 Terraform manages EKS access entries and cluster-admin policy associations for the operator role and additional admin principals. If an entry or association was created manually on an existing cluster, import it into Terraform state before applying to avoid a conflict.
 
@@ -81,6 +86,12 @@ The workflow trusts only `baotang2118/self-service-load-testing-platform` throug
 
 - Variables: `TERRAFORM_AWS_ROLE_ARN`, `TERRAFORM_ROLE_POLICY_ARN`, `TF_STATE_BUCKET`, `CLUSTER_ADMIN_CIDR`, `OPERATOR_ROLE_ARN`.
 - Secret: `BUDGET_ALERT_EMAIL`.
+
+Set `CLUSTER_ADMIN_CIDR` to a JSON array, for example
+`["203.0.113.10/32","198.51.100.20/32"]`. If it was previously set to a
+single CIDR string, update it to an array before running the workflow. The
+same migration is required for local `TF_VAR_cluster_admin_cidr` values and
+any `.tfvars` files.
 
 Run the workflow manually from GitHub Actions and select `plan`, `apply`, or `destroy`; no scheduled runs are configured. The Terraform role policy must also permit read/write access to the configured state key and its `.tflock` object. The first state bootstrap and initial role setup are performed locally.
 

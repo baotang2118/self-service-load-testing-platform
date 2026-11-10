@@ -108,7 +108,8 @@ Before running it:
    labeled `linux`, `x64`, and `demo-deploy`. It needs Docker, AWS CLI v2,
    kubectl, and Helm 3 installed, network access to ECR and the EKS API, and
    permission to use Docker. Private EKS access requires VPC connectivity;
-   public access requires the runner's egress IP in `cluster_admin_cidr`.
+   public access requires the runner's egress IP to be covered by an entry in
+   `cluster_admin_cidr`.
    Do not run untrusted pull request code on this runner.
 3. Create a dedicated IAM deployment role with GitHub OIDC trust restricted to
    `repo:baotang2118/self-service-load-testing-platform:environment:demo-deploy`.
