@@ -71,7 +71,7 @@ aws eks update-kubeconfig --region us-east-1 --name geocomly-loadtest
 kubectl get nodes
 ```
 
-The EKS public endpoint is restricted to your configured IP. Update `TF_VAR_cluster_admin_cidr` if your IP changes. GitHub-hosted runners do not receive Kubernetes access and cannot deploy workloads.
+The EKS public endpoint is restricted to your configured IP. Update `TF_VAR_cluster_admin_cidr` if your IP changes. GitHub-hosted runners do not receive Kubernetes access and cannot deploy workloads. The separate [demo deployment workflow](../../README.md#deploy-to-eks-with-github-actions) requires a networked self-hosted runner and a dedicated deployment role.
 
 Terraform manages EKS access entries and cluster-admin policy associations for the operator role and additional admin principals. If an entry or association was created manually on an existing cluster, import it into Terraform state before applying to avoid a conflict.
 
