@@ -26,11 +26,11 @@ Each item below is marked **Built** (in the repo today) or **Designed** (specifi
 
 ## 3. Developer experience
 
-The platform should fit into the service repository and existing GitHub workflow, rather than require a new portal, platform ticket, or AWS credentials. The key is to make adoption familiar, configuration safe, and results useful for the next engineering decision.
+The intended experience lets a service developer trigger a load-test pipeline directly from the service repo—using a PR label or manual dispatch—without filing a DevOps ticket or waiting for the platform team. It reuses the team's existing GitHub workflow instead of requiring a new portal or AWS credentials. The key is to make adoption familiar, configuration safe, and results useful for the next engineering decision.
 
 | Developer need | Experience | Status |
 | :--- | :--- | :--- |
-| Start a test | Keep a small, version-controlled config with the service and start from a PR label or manual dispatch. | **Designed** |
+| Start a test | Keep a small, version-controlled config with the service and run the pipeline from a PR label or manual dispatch, without a DevOps ticket. | **Designed** |
 | Validate changes locally | Use the Django and Go sample services with the existing Compose or Helm setup; the end-to-end load-test flow is not yet available locally. | **Built** (samples); **Designed** (load-test flow) |
 | Understand the result | See p50/p95/p99, RPS, error rate, and threshold verdict in the PR; inspect the raw JSON artifact for detail. | **Designed** |
 | Catch mistakes before provisioning | Validate the config and enforce fixed caps before creating test resources, with an actionable error for invalid values. | **Designed** |
