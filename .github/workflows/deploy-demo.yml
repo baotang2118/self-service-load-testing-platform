@@ -44,11 +44,26 @@ jobs:
             helm lint "./charts/$chart"
           done
 
+      - name: Require deploy role
+        shell: bash
+        env:
+          DEMO_DEPLOY_AWS_ROLE_ARN: ${{ vars.DEMO_DEPLOY_AWS_ROLE_ARN }}
+        run: |
+          : "${DEMO_DEPLOY_AWS_ROLE_ARN:?Set DEMO_DEPLOY_AWS_ROLE_ARN in the demo-deploy environment variables}"
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.DEMO_DEPLOY_AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Verify assumed role
+        shell: bash
+        run: |
+          set -euo pipefail
+          arn="$(aws sts get-caller-identity --query Arn --output text)"
+          echo "Caller: $arn"
+          [[ "$arn" == *":assumed-role/"*"github-runner"* ]] && { echo "Still using the runner instance role"; exit 1; } || true
 
       - name: Prepare cluster and registry access
         shell: bash
