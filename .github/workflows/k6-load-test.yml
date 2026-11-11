@@ -66,6 +66,14 @@ jobs:
           mkdir -p "$(dirname "$KUBECONFIG")"
           aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
 
+      - name: Debug cluster access
+        shell: bash
+        run: |
+          kubectl auth whoami || true
+          kubectl -n "$DEMO_NAMESPACE" get svc
+          kubectl auth can-i create pods/portforward -n "$DEMO_NAMESPACE"
+          kubectl auth can-i get pods -n "$DEMO_NAMESPACE"
+
       - name: Run bounded k6 test through port-forward
         shell: bash
         run: |
@@ -90,7 +98,8 @@ jobs:
             pid=$!
             pids+=("$pid")
             for _ in $(seq 1 30); do
-              if curl -fsS -o /dev/null --max-time 2 "http://127.0.0.1:$local_port/health/ready"; then
+              if curl -fs -o /dev/null --max-time 2 "http://127.0.0.1:$local_port/health/ready"; then
+                echo "Port-forward to $release is ready on 127.0.0.1:$local_port"
                 return 0
               fi
               kill -0 "$pid" 2>/dev/null || break
