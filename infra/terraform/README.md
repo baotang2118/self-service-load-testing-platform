@@ -38,6 +38,14 @@ terraform -chdir=infra/terraform/bootstrap/state apply -var="state_bucket_name=Y
 
 Keep the bootstrap state file secure. Do not destroy the state bucket as part of demo cleanup; it contains the main stack's Terraform state and lock file.
 
+The same stack defines the `<project>-terraform-role` IAM policy (`terraform_role_policy.tf`) for the GitHub Terraform role. If the bucket already exists and this stack has no state, create only the policy, then use its ARN as `terraform_role_policy_arn` and `TERRAFORM_ROLE_POLICY_ARN`:
+
+```powershell
+terraform -chdir=infra/terraform/bootstrap/state apply -var="state_bucket_name=YOUR-UNIQUE-STATE-BUCKET" "-target=aws_iam_policy.terraform_role"
+```
+
+The role cannot modify its own trust policy or attachments; change those locally.
+
 ## Local setup
 
 Authenticate to the sandbox account first (for example, with `aws configure sso`) and check the active identity with `aws sts get-caller-identity`. In PowerShell, set the required variables:
@@ -67,7 +75,7 @@ Only after reviewing the plan and cost estimate, apply:
 
 ```powershell
 terraform -chdir=infra/terraform/envs/loadtest apply
-aws eks update-kubeconfig --region us-east-1 --name geocomly-loadtest
+aws eks update-kubeconfig --region us-east-1 --name geocomply-loadtest
 kubectl get nodes
 ```
 

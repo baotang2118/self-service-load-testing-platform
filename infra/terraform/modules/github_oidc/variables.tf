@@ -8,6 +8,12 @@ variable "repository" {
   type        = string
 }
 
+variable "repository_subject" {
+  description = "Repository as it appears in the OIDC sub claim, e.g. owner@ownerId/name@repoId. Defaults to repository when null."
+  type        = string
+  default     = null
+}
+
 variable "environments" {
   description = "GitHub Actions environments allowed to assume the OIDC role."
   type        = list(string)

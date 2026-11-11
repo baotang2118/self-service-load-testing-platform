@@ -42,7 +42,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = false
 
   tags = merge(local.common_tags, {
-    Name = "${var.name}-public-${each.key}"
+    Name                     = "${var.name}-public-${each.key}"
     "kubernetes.io/role/elb" = "1"
   })
 }
@@ -56,7 +56,7 @@ resource "aws_subnet" "private" {
   map_public_ip_on_launch = false
 
   tags = merge(local.common_tags, {
-    Name = "${var.name}-private-${each.key}"
+    Name                              = "${var.name}-private-${each.key}"
     "kubernetes.io/role/internal-elb" = "1"
   })
 }

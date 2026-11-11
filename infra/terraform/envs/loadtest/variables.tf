@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "Prefix for resources created by this environment."
   type        = string
-  default     = "geocomly-loadtest"
+  default     = "geocomply-loadtest"
 }
 
 variable "aws_region" {
@@ -13,7 +13,7 @@ variable "aws_region" {
 variable "cluster_version" {
   description = "Kubernetes version supported by EKS in the selected region."
   type        = string
-  default     = "1.34"
+  default     = "1.36"
 }
 
 variable "vpc_cidr" {
@@ -80,6 +80,12 @@ variable "github_repository" {
   description = "GitHub repository allowed to assume the Terraform role."
   type        = string
   default     = "baotang2118/self-service-load-testing-platform"
+}
+
+variable "github_repository_subject" {
+  description = "Repository as it appears in the GitHub OIDC sub claim (immutable owner/repo IDs)."
+  type        = string
+  default     = "baotang2118@42202403/self-service-load-testing-platform@1450214603"
 }
 
 variable "github_environments" {
