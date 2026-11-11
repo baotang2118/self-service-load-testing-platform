@@ -91,6 +91,68 @@ dependency release names or credentials differ, set `postgres.host`,
 `postgres.existingSecret` and `postgres.passwordKey` in both application charts.
 The PostgreSQL Secret must already exist in that namespace.
 
+### Deploy to EKS with GitHub Actions
+
+The manually triggered **Deploy demo services** workflow builds both images,
+pushes unique tags to the existing ECR repository, then upgrades PostgreSQL,
+Django, and Go in that order. It waits for each release to become ready. It
+does not provision infrastructure, install pgAdmin, expose public endpoints, or
+automatically delete the deployment.
+
+Before running it:
+
+1. Provision the Terraform foundation and a default EKS storage class backed
+   by a working EBS CSI driver. The existing Terraform configuration does not
+   install the EBS CSI driver. Create the target namespace in advance.
+2. Set up a trusted, preferably ephemeral, self-hosted GitHub Actions runner
+   labeled `linux`, `x64`, and `demo-deploy`. It needs Docker, AWS CLI v2,
+   kubectl, and Helm 3 installed, network access to ECR and the EKS API, and
+   permission to use Docker. Private EKS access requires VPC connectivity;
+   public access requires the runner's egress IP to be covered by an entry in
+   `cluster_admin_cidr`.
+   Do not run untrusted pull request code on this runner.
+3. Create a dedicated IAM deployment role with GitHub OIDC trust restricted to
+   `repo:baotang2118/self-service-load-testing-platform:environment:demo-deploy`.
+   Grant `eks:DescribeCluster`, `ecr:GetAuthorizationToken`, and the ECR
+   push actions (`ecr:BatchCheckLayerAvailability`, `ecr:InitiateLayerUpload`,
+   `ecr:UploadLayerPart`, `ecr:CompleteLayerUpload`, `ecr:PutImage`, and
+   `ecr:DescribeRepositories`) for the target repository where applicable.
+   The existing Terraform role trusts only the Terraform environments; do not
+   reuse it for deployment. Give the deployment role EKS access and Kubernetes
+   permissions to get the target Namespace and to manage Helm release Secrets,
+   Secrets, Services, Deployments, and PVCs in that namespace (including
+   get/list/watch/create/update/patch/delete as needed). EKS nodes also need
+   permission to pull from the ECR repository.
+4. Create a GitHub environment named `demo-deploy`, restrict it to `main`,
+   and require reviewers. Set its variables `AWS_REGION`, `EKS_CLUSTER_NAME`,
+   `ECR_REPOSITORY_NAME` (the repository name, not its URL),
+   `DEMO_NAMESPACE`, and `DEMO_DEPLOY_AWS_ROLE_ARN`. The cluster name and
+   ECR URL are Terraform outputs.
+5. In that namespace, create a Secret named `demo-postgres-credentials`
+   containing a nonempty `postgres-password` key, for example from a protected
+   local file:
+
+   ```sh
+   kubectl -n YOUR_NAMESPACE create secret generic demo-postgres-credentials \
+     --from-file=postgres-password=./postgres-password.txt
+   ```
+
+Run **Actions → Deploy demo services → Run workflow** on `main`. The charts
+use database and username `tickets`; the Secret is shared by all three
+releases. PostgreSQL initializes credentials only on an empty volume: an
+existing database must already use the same password. For a previous
+`tickets-db` release, create the new Secret with the existing password before
+upgrading; the chart-managed old Secret is removed during the upgrade.
+Changing the Secret does not rotate the database password.
+
+The Helm releases and database volume persist until manually removed. Helm
+uninstall of `tickets-db` deletes its PVC and may permanently delete data;
+back it up first. For immediate cleanup, uninstall `demo-django`, `demo-go`,
+and `tickets-db` in the target namespace, and remove the separately managed
+Secret if no longer needed. Destroy the Terraform infrastructure separately as
+described in the infrastructure guide. The ECR lifecycle keeps only 30 images;
+old image tags can expire, limiting rollback and later pod restarts.
+
 Forward each service in a separate terminal, then use the API examples above:
 
 ```sh
@@ -122,6 +184,17 @@ port forwards, set both URLs (POSIX shell syntax):
 ```sh
 DEMO_DJANGO_URL=http://localhost:8001 DEMO_GO_URL=http://localhost:8002 uv run --directory demo-django pytest -q tests/test_integration.py
 ```
+
+### Run a k6 load test
+
+Set the repository Actions variables `DEMO_DJANGO_URL` and `DEMO_GO_URL` to the
+two service base URLs, such as their public load-balancer DNS URLs. Then run
+**Actions → Demo API load test → Run workflow**. The workflow manually runs a
+bounded, read-only test (five iterations per second for 1 minute) against each
+API's readiness and item-list endpoints. It fails if more than 1% of requests
+fail, checks fall below 99%, any iterations are dropped, or the 95th-percentile
+request duration reaches 500 ms. The arrival rate is capped at five iterations
+per second (ten API requests per second total).
 
 ### Prototype limitations
 

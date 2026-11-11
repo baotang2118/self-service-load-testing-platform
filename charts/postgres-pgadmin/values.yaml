@@ -3,9 +3,11 @@ postgres:
   database: tickets
   username: tickets
   password: tickets-local-only
+  existingSecret: ""
   storage: 1Gi
 
 pgadmin:
+  enabled: true
   image: dpage/pgadmin4:9.10
   email: admin@example.com
   password: admin-local-only

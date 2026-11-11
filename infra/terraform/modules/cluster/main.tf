@@ -70,7 +70,7 @@ resource "aws_eks_cluster" "this" {
     subnet_ids              = var.private_subnet_ids
     endpoint_private_access = true
     endpoint_public_access  = true
-    public_access_cidrs     = [var.cluster_admin_cidr]
+    public_access_cidrs     = var.cluster_admin_cidr
   }
 
   tags = var.tags
@@ -130,7 +130,7 @@ resource "aws_eks_node_group" "loadtest" {
   scaling_config {
     desired_size = 1
     min_size     = 1
-    max_size     = 2
+    max_size     = 3
   }
 
   update_config {

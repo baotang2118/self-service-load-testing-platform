@@ -19,11 +19,11 @@ variable "public_subnet_ids" {
 }
 
 variable "cluster_admin_cidr" {
-  description = "Restricted CIDR allowed to reach the public EKS API endpoint."
-  type        = string
+  description = "Restricted IPv4 CIDRs allowed to reach the public EKS API endpoint."
+  type        = list(string)
   validation {
-    condition     = can(cidrhost(var.cluster_admin_cidr, 0)) && var.cluster_admin_cidr != "0.0.0.0/0"
-    error_message = "The EKS API CIDR must be valid and must not be 0.0.0.0/0."
+    condition     = length(var.cluster_admin_cidr) > 0 && alltrue([for cidr in var.cluster_admin_cidr : try(cidrnetmask(cidr) != "0.0.0.0", false)])
+    error_message = "Provide at least one valid, restricted IPv4 CIDR; 0.0.0.0/0 is not allowed."
   }
 }
 
