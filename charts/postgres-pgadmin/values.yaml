@@ -5,6 +5,7 @@ postgres:
   password: tickets-local-only
   existingSecret: ""
   storage: 1Gi
+  storageClassName: ""
 
 pgadmin:
   enabled: true

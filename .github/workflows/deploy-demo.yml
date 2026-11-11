@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, linux, x64, demo-deploy]
+    runs-on: [self-hosted, linux, x64]
     environment: demo-deploy
     timeout-minutes: 30
     env:
@@ -21,6 +21,7 @@ jobs:
       EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
       ECR_REPOSITORY_NAME: ${{ vars.ECR_REPOSITORY_NAME }}
       DEMO_NAMESPACE: ${{ vars.DEMO_NAMESPACE }}
+      POSTGRES_STORAGE_CLASS: ${{ vars.POSTGRES_STORAGE_CLASS }}
 
     steps:
       - uses: actions/checkout@v4
@@ -86,7 +87,7 @@ jobs:
           helm upgrade --install tickets-db ./charts/postgres-pgadmin \
             --namespace "$DEMO_NAMESPACE" --wait --timeout 10m \
             --set-string postgres.existingSecret=demo-postgres-credentials \
-            --set-string postgres.storageClassName=gp3 \
+            --set-string postgres.storageClassName="$POSTGRES_STORAGE_CLASS" \
             --set pgadmin.enabled=false
           for service in django go; do
             helm upgrade --install "demo-$service" "./charts/demo-$service" \

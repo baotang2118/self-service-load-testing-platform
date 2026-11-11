@@ -135,7 +135,10 @@ Before running it:
    and require reviewers. Set its variables `AWS_REGION`, `EKS_CLUSTER_NAME`,
    `ECR_REPOSITORY_NAME` (the repository name, not its URL),
    `DEMO_NAMESPACE`, and `DEMO_DEPLOY_AWS_ROLE_ARN`. The cluster name and
-   ECR URL are Terraform outputs.
+   ECR URL are Terraform outputs. Optionally set `POSTGRES_STORAGE_CLASS`
+   (for example `gp3`, which must already exist in the cluster); when empty,
+   the cluster's default StorageClass is used. PostgreSQL is pulled from the
+   public `postgres` image and is not built or pushed to ECR.
 5. In that namespace, create a Secret named `demo-postgres-credentials`
    containing a nonempty `postgres-password` key, for example from a protected
    local file:
