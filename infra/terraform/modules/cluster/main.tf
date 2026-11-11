@@ -55,13 +55,14 @@ resource "aws_cloudwatch_log_group" "cluster" {
 }
 
 resource "aws_eks_cluster" "this" {
-  name     = var.name
-  role_arn = aws_iam_role.cluster.arn
-  version  = var.kubernetes_version
+  name                          = var.name
+  role_arn                      = aws_iam_role.cluster.arn
+  version                       = var.kubernetes_version
+  bootstrap_self_managed_addons = false
 
   access_config {
     authentication_mode                         = "API"
-    bootstrap_cluster_creator_admin_permissions = false
+    bootstrap_cluster_creator_admin_permissions = true
   }
 
   enabled_cluster_log_types = ["api", "audit", "authenticator"]
@@ -106,15 +107,17 @@ resource "aws_eks_access_entry" "additional_admin" {
 }
 
 resource "aws_eks_access_policy_association" "additional_admin" {
-  for_each = aws_eks_access_entry.additional_admin
+  for_each = var.additional_admin_principal_arns
 
   cluster_name  = aws_eks_cluster.this.name
-  principal_arn = each.value.principal_arn
+  principal_arn = each.value
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {
     type = "cluster"
   }
+
+  depends_on = [aws_eks_access_entry.additional_admin]
 }
 
 resource "aws_eks_node_group" "loadtest" {

@@ -13,7 +13,7 @@ variable "aws_region" {
 variable "cluster_version" {
   description = "Kubernetes version supported by EKS in the selected region."
   type        = string
-  default     = "1.35"
+  default     = "1.36"
 }
 
 variable "vpc_cidr" {
