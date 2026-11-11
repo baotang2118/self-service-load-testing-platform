@@ -8,7 +8,7 @@ mock_provider "aws" {
 
 variables {
   name                            = "demo"
-  kubernetes_version              = "1.34"
+  kubernetes_version              = "1.35"
   private_subnet_ids              = ["subnet-12345678", "subnet-87654321"]
   public_subnet_ids               = ["subnet-abcdef12", "subnet-abcdef34"]
   operator_role_arn               = "arn:aws:iam::123456789012:role/operator"
