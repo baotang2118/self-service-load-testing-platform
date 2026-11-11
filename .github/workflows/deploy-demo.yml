@@ -1,0 +1,98 @@
+name: Deploy demo services
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: demo-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, x64, demo-deploy]
+    environment: demo-deploy
+    timeout-minutes: 30
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
+      ECR_REPOSITORY_NAME: ${{ vars.ECR_REPOSITORY_NAME }}
+      DEMO_NAMESPACE: ${{ vars.DEMO_NAMESPACE }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set temporary credential paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp_dir="$RUNNER_TEMP/demo-deploy-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          echo "KUBECONFIG=$temp_dir/kubeconfig" >> "$GITHUB_ENV"
+          echo "DOCKER_CONFIG=$temp_dir/docker" >> "$GITHUB_ENV"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.DEMO_DEPLOY_AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Prepare cluster and registry access
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${AWS_REGION:?Set AWS_REGION}"
+          : "${EKS_CLUSTER_NAME:?Set EKS_CLUSTER_NAME}"
+          : "${ECR_REPOSITORY_NAME:?Set ECR_REPOSITORY_NAME}"
+          : "${DEMO_NAMESPACE:?Set DEMO_NAMESPACE}"
+          mkdir -p "$(dirname "$KUBECONFIG")" "$DOCKER_CONFIG"
+          aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
+          kubectl get namespace "$DEMO_NAMESPACE" >/dev/null
+          kubectl -n "$DEMO_NAMESPACE" get secret demo-postgres-credentials \
+            -o jsonpath='{.data.postgres-password}' | grep -q .
+          repository_uri="$(aws ecr describe-repositories --region "$AWS_REGION" \
+            --repository-names "$ECR_REPOSITORY_NAME" --query 'repositories[0].repositoryUri' --output text)"
+          registry="${repository_uri%%/*}"
+          aws ecr get-login-password --region "$AWS_REGION" |
+            docker login --username AWS --password-stdin "$registry"
+          echo "REPOSITORY_URI=$repository_uri" >> "$GITHUB_ENV"
+          echo "IMAGE_SUFFIX=${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+
+      - name: Build and push demo images
+        shell: bash
+        run: |
+          set -euo pipefail
+          for service in django go; do
+            image="$REPOSITORY_URI:$service-$IMAGE_SUFFIX"
+            docker build --tag "$image" "./demo-$service"
+            docker push "$image"
+          done
+
+      - name: Deploy PostgreSQL and services
+        shell: bash
+        run: |
+          set -euo pipefail
+          helm upgrade --install tickets-db ./charts/postgres-pgadmin \
+            --namespace "$DEMO_NAMESPACE" --wait --timeout 10m \
+            --set-string postgres.existingSecret=demo-postgres-credentials \
+            --set pgadmin.enabled=false
+          for service in django go; do
+            helm upgrade --install "demo-$service" "./charts/demo-$service" \
+              --namespace "$DEMO_NAMESPACE" --wait --timeout 5m \
+              --set-string image.repository="$REPOSITORY_URI" \
+              --set-string image.tag="$service-$IMAGE_SUFFIX" \
+              --set-string postgres.existingSecret=demo-postgres-credentials
+          done
+
+      - name: Remove temporary credentials
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "${KUBECONFIG:-}" && -n "${DOCKER_CONFIG:-}" ]]; then
+            rm -f "$KUBECONFIG" "$DOCKER_CONFIG/config.json"
+            rmdir "$DOCKER_CONFIG" "$(dirname "$KUBECONFIG")" 2>/dev/null || true
+          fi

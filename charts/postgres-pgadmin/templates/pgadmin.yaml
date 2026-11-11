@@ -1,3 +1,4 @@
+{{- if .Values.pgadmin.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -34,5 +35,6 @@ spec:
             - name: PGADMIN_DEFAULT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-database-credentials
+                  name: {{ default (printf "%s-database-credentials" .Release.Name) .Values.postgres.existingSecret | quote }}
                   key: pgadmin-password
+{{- end }}

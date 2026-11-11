@@ -24,4 +24,11 @@ helm upgrade tickets-db ./charts/postgres-pgadmin -f my-values.yaml
 
 These are prototype credentials. Kubernetes Secrets, Helm values, and Helm release history are not a production secrets solution. PostgreSQL applies its configured database, user, and password only when initializing an empty volume; changing them later does not update the existing database. Secret changes do not automatically restart the pods. pgAdmin settings and registered servers are not persisted across pod replacement.
 
+Set `postgres.existingSecret` to use a separately managed Secret instead of
+creating one in the chart. It must contain `postgres-password`, and also
+`pgadmin-password` if `pgadmin.enabled` is true. Set `pgadmin.enabled=false`
+to deploy PostgreSQL alone. Switching an existing release to an external
+Secret removes the old chart-managed Secret; provision the replacement first
+with the current database password.
+
 To remove the services, run `helm uninstall tickets-db`. This also deletes the PostgreSQL PVC and may permanently delete its data, depending on the storage provider's reclaim policy.
