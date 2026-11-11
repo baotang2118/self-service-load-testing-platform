@@ -185,6 +185,17 @@ port forwards, set both URLs (POSIX shell syntax):
 DEMO_DJANGO_URL=http://localhost:8001 DEMO_GO_URL=http://localhost:8002 uv run --directory demo-django pytest -q tests/test_integration.py
 ```
 
+### Run a k6 load test
+
+Set the repository Actions variables `DEMO_DJANGO_URL` and `DEMO_GO_URL` to the
+two service base URLs, such as their public load-balancer DNS URLs. Then run
+**Actions → Demo API load test → Run workflow**. The workflow manually runs a
+bounded, read-only test (five iterations per second for 1 minute) against each
+API's readiness and item-list endpoints. It fails if more than 1% of requests
+fail, checks fall below 99%, any iterations are dropped, or the 95th-percentile
+request duration reaches 500 ms. The arrival rate is capped at five iterations
+per second (ten API requests per second total).
+
 ### Prototype limitations
 
 These APIs have no authentication or authorization and must not be exposed to
