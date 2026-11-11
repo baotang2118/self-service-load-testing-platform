@@ -82,6 +82,12 @@ variable "github_repository" {
   default     = "baotang2118/self-service-load-testing-platform"
 }
 
+variable "github_repository_subject" {
+  description = "Repository as it appears in the GitHub OIDC sub claim (immutable owner/repo IDs)."
+  type        = string
+  default     = "baotang2118@42202403/self-service-load-testing-platform@1450214603"
+}
+
 variable "github_environments" {
   description = "GitHub environments allowed to assume the Terraform role."
   type        = list(string)

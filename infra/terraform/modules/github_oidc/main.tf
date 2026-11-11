@@ -21,7 +21,7 @@ data "aws_iam_policy_document" "github_assume_role" {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-        for environment in var.environments : "repo:${var.repository}:environment:${environment}"
+        for environment in var.environments : "repo:${coalesce(var.repository_subject, var.repository)}:environment:${environment}"
       ]
     }
   }

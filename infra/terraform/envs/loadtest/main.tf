@@ -44,6 +44,7 @@ module "github_oidc" {
 
   role_name              = "${var.project_name}-terraform"
   repository             = var.github_repository
+  repository_subject     = var.github_repository_subject
   environments           = var.github_environments
   permissions_policy_arn = var.terraform_role_policy_arn
   tags                   = local.tags
