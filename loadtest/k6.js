@@ -7,9 +7,8 @@ function serviceUrl(name) {
     throw new Error(`Set the ${name} environment variable`);
   }
 
-  const parsed = new URL(value);
-  if (!['http:', 'https:'].includes(parsed.protocol)) {
-    throw new Error(`${name} must use http or https`);
+  if (!/^https?:\/\/[^/\s]+/.test(value)) {
+    throw new Error(`${name} must be an http or https URL`);
   }
 
   return value.replace(/\/+$/, '');

@@ -34,6 +34,7 @@ jobs:
           set -euo pipefail
           temp_dir="$RUNNER_TEMP/load-test-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           echo "KUBECONFIG=$temp_dir/kubeconfig" >> "$GITHUB_ENV"
+          echo "K6_OUTPUT_DIR=$RUNNER_TEMP/k6-output-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
 
       - name: Require deploy role
         shell: bash
@@ -113,13 +114,25 @@ jobs:
           forward "$GO_RELEASE" 8080
           forward "$DJANGO_RELEASE" 8081
 
+          mkdir -p "$K6_OUTPUT_DIR"
           docker run --rm \
             --network host \
+            --user "$(id -u):$(id -g)" \
             --volume "$GITHUB_WORKSPACE/loadtest:/work:ro" \
+            --volume "$K6_OUTPUT_DIR:/out" \
             --workdir /work \
             --env DEMO_GO_URL=http://127.0.0.1:8080 \
             --env DEMO_DJANGO_URL=http://127.0.0.1:8081 \
-            grafana/k6:0.56.0 run k6.js
+            grafana/k6:0.56.0 run --summary-export /out/summary.json k6.js
+
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/k6-output-${{ github.run_id }}-${{ github.run_attempt }}/summary.json
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Remove temporary credentials
         if: always()
