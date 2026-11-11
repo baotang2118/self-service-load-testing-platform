@@ -63,6 +63,18 @@ module "demo_deploy" {
   tags               = local.tags
 }
 
+module "github_runner" {
+  source = "../../modules/github_runner"
+
+  name                      = var.project_name
+  vpc_id                    = module.network.vpc_id
+  subnet_id                 = module.network.private_subnet_ids[0]
+  cluster_security_group_id = module.cluster.cluster_security_group_id
+  github_repository         = var.github_repository
+  pat_parameter_name        = "/${var.project_name}/github-runner/pat"
+  tags                      = local.tags
+}
+
 module "budget" {
   source = "../../modules/budget"
 

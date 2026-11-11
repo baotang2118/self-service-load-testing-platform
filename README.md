@@ -106,13 +106,24 @@ Before running it:
    `demo_deploy_role_arn`. Re-apply the bootstrap state stack first so the
    Terraform role may manage the new IAM resources. Create the target
    namespace in advance (default `demo`, Terraform variable `demo_namespace`).
-2. Set up a trusted, preferably ephemeral, self-hosted GitHub Actions runner
-   labeled `linux`, `x64`, and `demo-deploy`. It needs Docker, AWS CLI v2,
-   kubectl, and Helm 3 installed, network access to ECR and the EKS API, and
-   permission to use Docker. Private EKS access requires VPC connectivity;
-   public access requires the runner's egress IP to be covered by an entry in
-   `cluster_admin_cidr`.
-   Do not run untrusted pull request code on this runner.
+2. Terraform (`modules/github_runner`) also creates the self-hosted runner: a
+   private-subnet EC2 instance (no public IP, SSM Session Manager access, no
+   SSH) with Docker, kubectl, Helm 3, and AWS CLI v2. It reaches the EKS API
+   through the private endpoint, so `cluster_admin_cidr` need not include it.
+   It registers an ephemeral runner (one job, then re-registers) labeled
+   `self-hosted`, `linux`, `x64`, and `demo-deploy`. Before the first apply,
+   create a fine-grained GitHub token limited to this repository with
+   **Administration: read and write**, and store it:
+
+   ```sh
+   aws ssm put-parameter --name /geocomply-loadtest/github-runner/pat \
+     --type SecureString --value "$GITHUB_RUNNER_PAT"
+   ```
+
+   Check **Settings → Actions → Runners** for an idle runner, or run
+   `aws ssm start-session --target <github_runner_instance_id>` and
+   `journalctl -u github-runner`. Jobs on this host can read the token, so run
+   only trusted code on it (see the environment restrictions in step 4).
 3. The deployment role is created by Terraform (`modules/demo_deploy`): GitHub
    OIDC trust is restricted to
    `repo:<repository subject>:environment:demo-deploy`, ECR push is limited

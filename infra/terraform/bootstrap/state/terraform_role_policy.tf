@@ -34,6 +34,13 @@ data "aws_iam_policy_document" "terraform_role" {
       "ec2:CreateRoute", "ec2:ReplaceRoute", "ec2:DeleteRoute",
       "ec2:AssociateRouteTable", "ec2:DisassociateRouteTable",
       "ec2:CreateTags", "ec2:DeleteTags",
+      "ec2:RunInstances", "ec2:TerminateInstances",
+      "ec2:ModifyInstanceAttribute", "ec2:ModifyInstanceMetadataOptions",
+      "ec2:CreateSecurityGroup", "ec2:DeleteSecurityGroup",
+      "ec2:AuthorizeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress",
+      "ec2:RevokeSecurityGroupIngress", "ec2:RevokeSecurityGroupEgress",
+      "ec2:ModifySecurityGroupRules", "ec2:UpdateSecurityGroupRuleDescriptionsIngress",
+      "ec2:UpdateSecurityGroupRuleDescriptionsEgress",
     ]
     resources = ["*"]
 
@@ -113,6 +120,7 @@ data "aws_iam_policy_document" "terraform_role" {
         "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
         "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
         "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy",
+        "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
       ]
     }
   }
@@ -135,6 +143,22 @@ data "aws_iam_policy_document" "terraform_role" {
       variable = "iam:PassedToService"
       values   = ["eks.amazonaws.com", "ec2.amazonaws.com", "pods.eks.amazonaws.com"]
     }
+  }
+
+  statement {
+    sid = "ProjectInstanceProfiles"
+    actions = [
+      "iam:CreateInstanceProfile", "iam:DeleteInstanceProfile", "iam:GetInstanceProfile",
+      "iam:AddRoleToInstanceProfile", "iam:RemoveRoleFromInstanceProfile",
+      "iam:TagInstanceProfile", "iam:UntagInstanceProfile",
+    ]
+    resources = ["arn:aws:iam::${local.account_id}:instance-profile/${var.project_name}-*"]
+  }
+
+  statement {
+    sid       = "RunnerAmiParameter"
+    actions   = ["ssm:GetParameter"]
+    resources = ["arn:aws:ssm:${var.aws_region}::parameter/aws/service/ami-amazon-linux-latest/*"]
   }
 
   statement {

@@ -1,0 +1,80 @@
+#!/bin/bash
+set -euo pipefail
+
+dnf install -y docker git jq libicu tar gzip
+systemctl enable --now docker
+
+id runner >/dev/null 2>&1 || useradd --create-home --shell /bin/bash runner
+usermod -aG docker runner
+
+workdir="$(mktemp -d)"
+cd "$workdir"
+
+curl -fsSLO "https://dl.k8s.io/release/v${kubectl_version}/bin/linux/amd64/kubectl"
+echo "${kubectl_sha256}  kubectl" | sha256sum -c -
+install -m 0755 kubectl /usr/local/bin/kubectl
+
+curl -fsSLO "https://get.helm.sh/helm-v${helm_version}-linux-amd64.tar.gz"
+echo "${helm_sha256}  helm-v${helm_version}-linux-amd64.tar.gz" | sha256sum -c -
+tar -xzf "helm-v${helm_version}-linux-amd64.tar.gz" linux-amd64/helm
+install -m 0755 linux-amd64/helm /usr/local/bin/helm
+
+curl -fsSLO "https://github.com/actions/runner/releases/download/v${runner_version}/actions-runner-linux-x64-${runner_version}.tar.gz"
+echo "${runner_sha256}  actions-runner-linux-x64-${runner_version}.tar.gz" | sha256sum -c -
+mkdir -p /opt/actions-runner
+tar -xzf "actions-runner-linux-x64-${runner_version}.tar.gz" -C /opt/actions-runner
+
+cat > /opt/actions-runner/start-ephemeral.sh <<'EOF'
+#!/bin/bash
+# Registers a one-job runner, runs it, then repeats with a clean workspace.
+set -euo pipefail
+cd /opt/actions-runner
+export AWS_DEFAULT_REGION='${region}'
+
+while true; do
+  pat="$(aws ssm get-parameter --name '${pat_parameter_name}' --with-decryption \
+    --query Parameter.Value --output text)"
+  token="$(curl -fsS -X POST \
+    -H "Authorization: Bearer $pat" \
+    -H 'Accept: application/vnd.github+json' \
+    -H 'X-GitHub-Api-Version: 2022-11-28' \
+    'https://api.github.com/repos/${github_repository}/actions/runners/registration-token' |
+    jq -er .token)"
+  unset pat
+
+  rm -rf _work .runner .credentials .credentials_rsaparams
+  ./config.sh --unattended --ephemeral --replace \
+    --url 'https://github.com/${github_repository}' \
+    --token "$token" \
+    --name "${name}-$(hostname -s)" \
+    --labels '${labels}'
+  unset token
+  ./run.sh
+done
+EOF
+chmod 0755 /opt/actions-runner/start-ephemeral.sh
+chown -R runner:runner /opt/actions-runner
+
+cat > /etc/systemd/system/github-runner.service <<'EOF'
+[Unit]
+Description=GitHub Actions ephemeral runner
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+User=runner
+WorkingDirectory=/opt/actions-runner
+ExecStart=/opt/actions-runner/start-ephemeral.sh
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now github-runner.service
+
+cd /
+rm -rf "$workdir"

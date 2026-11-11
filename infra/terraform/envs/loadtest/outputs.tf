@@ -23,6 +23,11 @@ output "demo_deploy_role_arn" {
   value       = module.demo_deploy.role_arn
 }
 
+output "github_runner_instance_id" {
+  description = "EC2 instance ID of the self-hosted GitHub runner (SSM Session Manager target)."
+  value       = module.github_runner.instance_id
+}
+
 output "vpc_id" {
   description = "Dedicated VPC ID."
   value       = module.network.vpc_id
