@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
   group: demo-api-load-test
@@ -12,25 +13,110 @@ concurrency:
 
 jobs:
   load-test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    runs-on: [self-hosted, linux, x64]
+    environment: demo-deploy
+    timeout-minutes: 10
     env:
-      DEMO_DJANGO_URL: ${{ vars.DEMO_DJANGO_URL }}
-      DEMO_GO_URL: ${{ vars.DEMO_GO_URL }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
+      DEMO_NAMESPACE: ${{ vars.DEMO_NAMESPACE }}
+      DJANGO_RELEASE: demo-django
+      GO_RELEASE: demo-go
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Check target URLs are configured
+      - name: Set temporary credential paths
+        shell: bash
         run: |
-          test -n "$DEMO_DJANGO_URL" || { echo "Set repository variable DEMO_DJANGO_URL" >&2; exit 1; }
-          test -n "$DEMO_GO_URL" || { echo "Set repository variable DEMO_GO_URL" >&2; exit 1; }
+          set -euo pipefail
+          temp_dir="$RUNNER_TEMP/load-test-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          echo "KUBECONFIG=$temp_dir/kubeconfig" >> "$GITHUB_ENV"
 
-      - name: Run bounded k6 test
+      - name: Require deploy role
+        shell: bash
+        env:
+          DEMO_DEPLOY_AWS_ROLE_ARN: ${{ vars.DEMO_DEPLOY_AWS_ROLE_ARN }}
         run: |
+          : "${DEMO_DEPLOY_AWS_ROLE_ARN:?Set DEMO_DEPLOY_AWS_ROLE_ARN in the demo-deploy environment variables}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.DEMO_DEPLOY_AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Verify assumed role
+        shell: bash
+        run: |
+          set -euo pipefail
+          arn="$(aws sts get-caller-identity --query Arn --output text)"
+          echo "Caller: $arn"
+          [[ "$arn" == *":assumed-role/"*"github-runner"* ]] && { echo "Still using the runner instance role"; exit 1; } || true
+
+      - name: Prepare cluster access
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${AWS_REGION:?Set AWS_REGION}"
+          : "${EKS_CLUSTER_NAME:?Set EKS_CLUSTER_NAME}"
+          : "${DEMO_NAMESPACE:?Set DEMO_NAMESPACE}"
+          mkdir -p "$(dirname "$KUBECONFIG")"
+          aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
+
+      - name: Run bounded k6 test through port-forward
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pids=()
+          cleanup() {
+            if ((${#pids[@]})); then
+              kill "${pids[@]}" 2>/dev/null || true
+            fi
+          }
+          trap cleanup EXIT
+
+          # forward <release> <local-port>: tunnel the Service and wait until it is ready.
+          forward() {
+            local release="$1" local_port="$2" service_port log pid
+            service_port="$(kubectl -n "$DEMO_NAMESPACE" get svc "$release" \
+              -o jsonpath='{.spec.ports[0].port}')"
+            log="$RUNNER_TEMP/port-forward-$release.log"
+            kubectl -n "$DEMO_NAMESPACE" port-forward --address 127.0.0.1 \
+              "svc/$release" "$local_port:$service_port" >"$log" 2>&1 &
+            pid=$!
+            pids+=("$pid")
+            for _ in $(seq 1 30); do
+              if curl -fsS -o /dev/null --max-time 2 "http://127.0.0.1:$local_port/health/ready"; then
+                return 0
+              fi
+              kill -0 "$pid" 2>/dev/null || break
+              sleep 1
+            done
+            echo "Port-forward to $release did not become ready" >&2
+            cat "$log" >&2
+            return 1
+          }
+
+          forward "$GO_RELEASE" 8080
+          forward "$DJANGO_RELEASE" 8081
+
           docker run --rm \
+            --network host \
             --volume "$GITHUB_WORKSPACE/loadtest:/work:ro" \
             --workdir /work \
-            --env DEMO_DJANGO_URL \
-            --env DEMO_GO_URL \
+            --env DEMO_GO_URL=http://127.0.0.1:8080 \
+            --env DEMO_DJANGO_URL=http://127.0.0.1:8081 \
             grafana/k6:0.56.0 run k6.js
+
+      - name: Remove temporary credentials
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "${KUBECONFIG:-}" ]]; then
+            rm -f "$KUBECONFIG"
+            rmdir "$(dirname "$KUBECONFIG")" 2>/dev/null || true
+          fi
