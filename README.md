@@ -101,9 +101,11 @@ automatically delete the deployment.
 
 Before running it:
 
-1. Provision the Terraform foundation and a default EKS storage class backed
-   by a working EBS CSI driver. The existing Terraform configuration does not
-   install the EBS CSI driver. Create the target namespace in advance.
+1. Provision the Terraform foundation. It installs the EKS add-ons (including
+   the EBS CSI driver) and creates the `demo-deploy` IAM role, output as
+   `demo_deploy_role_arn`. Re-apply the bootstrap state stack first so the
+   Terraform role may manage the new IAM resources. Create the target
+   namespace in advance (default `demo`, Terraform variable `demo_namespace`).
 2. Set up a trusted, preferably ephemeral, self-hosted GitHub Actions runner
    labeled `linux`, `x64`, and `demo-deploy`. It needs Docker, AWS CLI v2,
    kubectl, and Helm 3 installed, network access to ECR and the EKS API, and
@@ -111,18 +113,13 @@ Before running it:
    public access requires the runner's egress IP to be covered by an entry in
    `cluster_admin_cidr`.
    Do not run untrusted pull request code on this runner.
-3. Create a dedicated IAM deployment role with GitHub OIDC trust restricted to
-   `repo:baotang2118/self-service-load-testing-platform:environment:demo-deploy`.
-   Grant `eks:DescribeCluster`, `ecr:GetAuthorizationToken`, and the ECR
-   push actions (`ecr:BatchCheckLayerAvailability`, `ecr:InitiateLayerUpload`,
-   `ecr:UploadLayerPart`, `ecr:CompleteLayerUpload`, `ecr:PutImage`, and
-   `ecr:DescribeRepositories`) for the target repository where applicable.
-   The existing Terraform role trusts only the Terraform environments; do not
-   reuse it for deployment. Give the deployment role EKS access and Kubernetes
-   permissions to get the target Namespace and to manage Helm release Secrets,
-   Secrets, Services, Deployments, and PVCs in that namespace (including
-   get/list/watch/create/update/patch/delete as needed). EKS nodes also need
-   permission to pull from the ECR repository.
+3. The deployment role is created by Terraform (`modules/demo_deploy`): GitHub
+   OIDC trust is restricted to
+   `repo:<repository subject>:environment:demo-deploy`, ECR push is limited
+   to the sample repository, and EKS access is `AmazonEKSEditPolicy` scoped to
+   the demo namespace. The Terraform role trusts only the Terraform
+   environments and is not reused for deployment. EKS nodes pull from ECR
+   through the node role.
 4. Create a GitHub environment named `demo-deploy`, restrict it to `main`,
    and require reviewers. Set its variables `AWS_REGION`, `EKS_CLUSTER_NAME`,
    `ECR_REPOSITORY_NAME` (the repository name, not its URL),

@@ -146,5 +146,8 @@ resource "aws_eks_node_group" "loadtest" {
 
   tags = var.tags
 
-  depends_on = [aws_iam_role_policy_attachment.nodes]
+  depends_on = [
+    aws_iam_role_policy_attachment.nodes,
+    aws_eks_addon.node,
+  ]
 }

@@ -112,8 +112,17 @@ data "aws_iam_policy_document" "terraform_role" {
         "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
         "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
         "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+        "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy",
       ]
     }
+  }
+
+  statement {
+    sid = "ProjectRoleInlinePolicies"
+    actions = [
+      "iam:PutRolePolicy", "iam:GetRolePolicy", "iam:DeleteRolePolicy",
+    ]
+    resources = ["arn:aws:iam::${local.account_id}:role/${var.project_name}-*"]
   }
 
   statement {
@@ -124,7 +133,7 @@ data "aws_iam_policy_document" "terraform_role" {
     condition {
       test     = "StringEquals"
       variable = "iam:PassedToService"
-      values   = ["eks.amazonaws.com", "ec2.amazonaws.com"]
+      values   = ["eks.amazonaws.com", "ec2.amazonaws.com", "pods.eks.amazonaws.com"]
     }
   }
 

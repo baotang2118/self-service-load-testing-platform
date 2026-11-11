@@ -18,6 +18,11 @@ output "terraform_role_arn" {
   value       = module.github_oidc.role_arn
 }
 
+output "demo_deploy_role_arn" {
+  description = "IAM role ARN for the Deploy demo services workflow."
+  value       = module.demo_deploy.role_arn
+}
+
 output "vpc_id" {
   description = "Dedicated VPC ID."
   value       = module.network.vpc_id

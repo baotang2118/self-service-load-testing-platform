@@ -94,6 +94,12 @@ variable "github_environments" {
   default     = ["terraform-plan", "terraform-apply", "terraform-destroy"]
 }
 
+variable "demo_namespace" {
+  description = "Kubernetes namespace the demo deployment role may edit."
+  type        = string
+  default     = "demo"
+}
+
 variable "terraform_role_policy_arn" {
   description = "ARN of a reviewed IAM policy granting only the Terraform actions needed for this environment."
   type        = string

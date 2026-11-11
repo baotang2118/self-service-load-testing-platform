@@ -50,6 +50,19 @@ module "github_oidc" {
   tags                   = local.tags
 }
 
+module "demo_deploy" {
+  source = "../../modules/demo_deploy"
+
+  role_name          = "${var.project_name}-demo-deploy"
+  oidc_provider_arn  = module.github_oidc.provider_arn
+  repository_subject = coalesce(var.github_repository_subject, var.github_repository)
+  cluster_name       = module.cluster.cluster_name
+  cluster_arn        = module.cluster.cluster_arn
+  namespace          = var.demo_namespace
+  ecr_repository_arn = module.ecr.repository_arn
+  tags               = local.tags
+}
+
 module "budget" {
   source = "../../modules/budget"
 
